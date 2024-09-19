@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "madrigalWeb"
+version = "3.3.1"
+authors = [
+  { name="Bill Rideout", email="brideout@mit.edu" },
+]
+description = "Python Madrigal Remote API"
+readme = "README.md"
+requires-python = ">=3.3"
+dependencies = [
+    "packaging",]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "http://cedar.openmadrigal.org/docs/name/rr_python.html"
