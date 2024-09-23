@@ -17,7 +17,7 @@ authors:
     family-names: Cariglia
     email: cariglia@mit.edu
     affiliation: MIT Haystack Observatory
-repository-code: 'https://github.mit.edu/brideout/madrigalWeb'
+repository-code: 'https://github.com/MITHaystack/madrigalWeb'
 url: 'http://cedar.openmadrigal.org'
 abstract: >-
   madrigalWeb is a pure python module to access data from
