@@ -4,9 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "madrigalWeb"
-version = "3.3.1"
+version = "3.3.2"
 authors = [
   { name="Bill Rideout", email="brideout@mit.edu" },
+  { name="Katherine Cariglia", email="cariglia@mit.edu" },
 ]
 description = "Python Madrigal Remote API"
 readme = "README.md"
@@ -20,4 +21,4 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "http://cedar.openmadrigal.org/docs/name/rr_python.html"
+"Homepage" = "https://cedar.openmadrigal.org/docs/name/rr_python.html"
