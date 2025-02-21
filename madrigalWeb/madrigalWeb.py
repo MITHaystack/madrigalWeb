@@ -2069,7 +2069,7 @@ class MadrigalData:
             group citation (string)
         """
         if not useLocal:
-            url = 'http://cedar.openmadrigal.org/createCitationGroupWithList?'
+            url = 'https://cedar.openmadrigal.org/createCitationGroupWithList?'
         else:
             url = urllib.parse.urljoin(self.cgiurl,'createCitationGroupWithList') + '?'
         user_fullname = user_fullname.replace(' ','+').strip()
@@ -2125,7 +2125,7 @@ class MadrigalData:
         
         Returns a list with all citations in group, which can be used in createCitationGroupFromList
         """
-        url = 'http://cedar.openmadrigal.org/getCitationGroupWithFilters?'
+        url = 'https://cedar.openmadrigal.org/getCitationGroupWithFilters?'
         # temp only - until cedar updated
         # url = 'http://127.0.0.1:8000/getCitationGroupWithFilters?'
         url += 'startDate=%s&' % (startDate.strftime('%Y-%m-%d'))

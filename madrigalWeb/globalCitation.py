@@ -203,7 +203,7 @@ if user_affiliation is None:
     sys.exit(-1)  
 
 # verify the url is valid
-server = madrigalWeb.madrigalWeb.MadrigalData('http://cedar.openmadrigal.org')
+server = madrigalWeb.madrigalWeb.MadrigalData('https://cedar.openmadrigal.org')
 
 citationList = server.getCitationListFromFilters(startDate, endDate, inst, kindat, 
                                                  seasonalStartDate, seasonalEndDate, 
