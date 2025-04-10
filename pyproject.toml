@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "madrigalWeb"
-version = "3.3.2"
+version = "3.3.3"
 authors = [
   { name="Bill Rideout", email="brideout@mit.edu" },
   { name="Katherine Cariglia", email="cariglia@mit.edu" },
@@ -21,4 +21,4 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://cedar.openmadrigal.org/docs/name/rr_python.html"
+"Homepage" = "https://github.com/MITHaystack/madrigalWeb"
