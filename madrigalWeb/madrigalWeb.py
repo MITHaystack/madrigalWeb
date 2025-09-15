@@ -667,16 +667,15 @@ class MadrigalData:
         # read main url
         url = url.replace('+', '%2B')
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT)
+            with urllib.request.urlopen(url, timeout=TIMEOUT) as mainUrl:
+                if format == 'ascii':
+                    page = mainUrl.read().decode('utf-8')
+                else:
+                    page = mainUrl.read()
         except:
             raise ValueError('unable to open url ' + str(url))
                 
-        if format == 'ascii':
-            page = mainUrl.read().decode('utf-8')
-        else:
-            page = mainUrl.read()
-
-        mainUrl.close()
+        
 
         if format == 'ascii':
             if page.find('Error occurred') != -1:
@@ -687,11 +686,20 @@ class MadrigalData:
         
         else:
             if format == 'ascii':
-                f = open(outputFile, 'w')
+                with open(outputFile, 'w') as f:
+                    f.write(page)
             else:
-                f = open(outputFile, 'wb')
-            f.write(page)
-            f.close()
+                with open(outputFile, 'wb') as f:
+                    f.write(page)
+
+        # check that final file is not empty
+        if os.path.getsize(outputFile) == 0:
+            print(f"Downloaded file {outputFile} is empty, removing..")
+            os.system(f"rm {outputFile}")
+        
+        # success
+        print(f"Downloaded file {outputFile}")
+                    
 
 
     def madCalculator(self,
@@ -1767,39 +1775,60 @@ class MadrigalData:
         
         CHUNK = 16 * 1024
 
-        urlFile = urllib.request.urlopen(url, timeout=TIMEOUT)
-        
-        if format in ('ascii', 'simple'):
-            f = open(destination, 'w')
-        else:
-            f = open(destination, 'wb')
+        isgzip = False
 
-        while(True):
-            if format in ('ascii', 'simple'):
-                try:
-                    data = urlFile.read(CHUNK).decode('utf8')
-                except:
-                    # probably gzip ascii - convert
-                    f.close()
-                    try:
-                        os.remove(destination)
-                    except:
-                        pass
-                    urlFile.close()
-                    urlFile = urllib.request.urlopen(url, timeout=TIMEOUT)
-                    f = open(destination + '.gz', 'wb')
-                    format = 'gzip'
-                    data = urlFile.read(CHUNK)
-                    
-            else:
-                data = urlFile.read(CHUNK)
-            if not data:
-                break
-            f.write(data)
+        if not isgzip:
+            with urllib.request.urlopen(url, timeout=TIMEOUT) as urlFile:
+                readtype = None
+                if format in ('ascii', 'simple'):
+                    readtype = 'w'
+                    #f = open(destination, 'w')
+                else:
+                    readtype = 'wb'
+                    #f = open(destination, 'wb')
+
+                with open(destination, readtype) as f:
+                    while(True):
+                        if format in ('ascii', 'simple'):
+                            try:
+                                data = urlFile.read(CHUNK).decode('utf8')
+                            except:
+                                # probably gzip ascii - convert
+                                isgzip = True
+                                break
+                                
+                                
+                        else:
+                            data = urlFile.read(CHUNK)
+                        if not data:
+                            break
+                        f.write(data)
+        else:
+            # handle gzip ascii
+            try:
+                os.remove(destination)
+            except:
+                pass
             
-        urlFile.close()
+            with urllib.request.urlopen(url, timeout=TIMEOUT) as urlFile:
+                with open(destination + '.gz', 'wb') as f:
+                    format = 'gzip'
+                    while(True):
+                        try:
+                            data = urlFile.read(CHUNK)
+                        except:
+                            pass
+                        if not data:
+                            break
+
         
-        f.close()
+        # check that final file is not empty
+        if os.path.getsize(destination) == 0:
+            print(f"Downloaded file {destination} is empty, removing..")
+            os.system(f"rm {destination}")
+
+        print(f"Downloaded file {destination}")
+            
         
         
     
@@ -1827,11 +1856,11 @@ class MadrigalData:
         
         url = url.replace('+', '%2B')
 
-        urlFile = urllib.request.urlopen(url, timeout=TIMEOUT)
+        with urllib.request.urlopen(url, timeout=TIMEOUT) as urlFile:
+            data = urlFile.read().decode('utf-8')
         
         retList = []
 
-        data = urlFile.read().decode('utf-8')
         lines = data.split('\n')
         for line in lines:
             items = line.split(',')
@@ -1863,17 +1892,19 @@ class MadrigalData:
         url += '?expPath=%s' % (expPath.replace(' ', '+'))
         url = url.replace('+', '%2B')
         
-        urlFile = urllib.request.urlopen(url, timeout=TIMEOUT2)
-
-        data = urlFile.read()
-
-        urlFile.close()
+        with urllib.request.urlopen(url, timeout=TIMEOUT2) as urlFile:
+            data = urlFile.read()
         
-        f = open(destination, 'wb')
+        with open(destination, 'wb') as f:
+            f.write(data)
 
-        f.write(data)
-
-        f.close()
+        # check that final file is not empty
+        if os.path.getsize(destination) == 0:
+            print(f"Downloaded file {destination} is empty, removing..")
+            os.system(f"rm {destination}")
+        
+        # success
+        print(f"Downloaded file {destination}")
         
         
         
@@ -1964,14 +1995,11 @@ class MadrigalData:
 
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT2)
+            with urllib.request.urlopen(url, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf8')
+                page = page.split('\n')
         except:
             raise ValueError('unable to open url ' + str(url))
-
-        page = mainUrl.read().decode('utf8')
-        page = page.split('\n')
-
-        mainUrl.close()
 
         # parse the result
         if len(page) == 0:
@@ -2006,14 +2034,11 @@ class MadrigalData:
 
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT2)
+            with urllib.request.urlopen(url, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf-8')
         except:
             # if this fails, must be 2.5
             return('2.5')
-
-        page = mainUrl.read().decode('utf-8')
-
-        mainUrl.close()
         
         return(page.strip())
     
@@ -2032,14 +2057,11 @@ class MadrigalData:
         """
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT2)
+            with urllib.request.urlopen(url, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf8')
+                page = page.strip().split('\n')
         except:
             raise ValueError('unable to open url ' + str(url))
-
-        page = mainUrl.read().decode('utf8')
-        page = page.strip().split('\n')
-
-        mainUrl.close()
         
         return(page)
     
@@ -2084,14 +2106,11 @@ class MadrigalData:
         try:
             data = urllib.parse.urlencode(citationDict).encode()
             req = urllib.request.Request(url, data=data)
-            mainUrl = urllib.request.urlopen(req, timeout=TIMEOUT2)
+            with urllib.request.urlopen(req, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf8')
+                page = page.strip()
         except:
             raise ValueError('unable to open url ' + str(url))
-
-        page = mainUrl.read().decode('utf8')
-        page = page.strip()
-
-        mainUrl.close()
         
         return(page)
     
@@ -2152,14 +2171,11 @@ class MadrigalData:
             
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT2)
+            with urllib.request.urlopen(url, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf8')
+                page = page.strip().split('\n')
         except:
             raise ValueError('unable to open url ' + str(url))
-
-        page = mainUrl.read().decode('utf8')
-        page = page.strip().split('\n')
-
-        mainUrl.close()
         
         return(page)
     
