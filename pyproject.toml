@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "madrigalWeb"
-version = "3.3.3"
+version = "3.3.4"
 authors = [
   { name="Bill Rideout", email="brideout@mit.edu" },
   { name="Katherine Cariglia", email="cariglia@mit.edu" },
@@ -22,3 +22,47 @@ classifiers = [
 
 [project.urls]
 "Homepage" = "https://github.com/MITHaystack/madrigalWeb"
+
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+line-length = 100
+indent-width = 4
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = ["E714", "E722", "E402"]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "tab"
+skip-magic-trailing-comma = false

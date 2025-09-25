@@ -6,7 +6,8 @@
    python exampleMadrigalWebServices.py <optional url>
 
 """
-import sys, os.path
+import sys
+import os.path
 
 # $Id: exampleMadrigalWebServices.py 7404 2021-12-17 15:52:40Z brideout $
 
@@ -20,7 +21,7 @@ user_affiliation = 'MIT Haystack'
 if len(sys.argv) > 1:
     madrigalUrl = sys.argv[1]
 else:
-    madrigalUrl = 'http://madrigal.haystack.mit.edu'
+    madrigalUrl = 'https://cedar.openmadrigal.org'
 
 
 testData = madrigalWeb.madrigalWeb.MadrigalData(madrigalUrl)

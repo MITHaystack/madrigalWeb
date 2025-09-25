@@ -64,143 +64,97 @@ usage = """
                                     year to collect data.  Defaults to Dec 31.  Example: 
                                     (--seasonalEndDate=10/31) would only allow experiments before Oct 31 of each year.
 
-        --includeNonDefault - if given, include realtime files when there are no default.  Default is to search only default files.                            
+        --includeNonDefault - if given, include realtime files when there are no default.  Default is to search only default files.   
+
+
+        --dateList=<date list> - comma separated list of date strings in the form YYYY-MM-DD, to get experiments for 
+                                a list of discrete days. Must include startDate and endDate.                    
 """
 
+import argparse
 import sys
-import os
-import time
 import traceback
-import getopt
-import re
 import datetime
-import fnmatch
 
 import madrigalWeb.madrigalWeb
 
-
 # parse command line
-arglist = ''
-longarglist = ['user_fullname=',
-               'user_email=',
-               'user_affiliation=',
-               'startDate=',
-               'endDate=',
-               'inst=',
-               'kindat=',
-               'seasonalStartDate=',
-               'seasonalEndDate=',
-               'includeNonDefault',
-               'skipVerification',
-               'expName=',
-               'excludeExpName=',
-               'fileDesc=']
+parser = argparse.ArgumentParser(
+        description='Run a global search through Madrigal data, and returns a citation to the group of files.',
+        usage=usage,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    
+# Required arguments
+parser.add_argument('--user_fullname', required=True, help='Full user name (quoted if contains spaces)')
+parser.add_argument('--user_email', required=True, help='User email address')
+parser.add_argument('--user_affiliation', required=True, help='User affiliation (quoted if contains spaces)')
+parser.add_argument('--startDate', help='Start date in YYYY-MM-DD format to filter experiments before.  Defaults to allow all experiments.')
+parser.add_argument('--endDate', help='End date in YYYY-MM-DD format to filter experiments after.  Defaults to allow all experiments.')
+parser.add_argument('--inst', default=None, help='Comma separated list of instrument codes or names. See Madrigal documentation \
+                                   for this list.  Defaults to allow all instruments. If names are given, the \
+                                   argument must be enclosed in double quotes.  An asterisk will perform matching as \
+                                   in glob.')
+    
+# Optional arguments
+parser.add_argument('--kindat', default=None, help='Comma separated list of kind of data codes. See Madrigal documentation \
+                                       for this list.  Defaults to allow all kinds of data.  If names are given, the \
+                                       argument must be enclosed in double quotes.  An asterisk will perform matching as \
+                                       in glob.')
+parser.add_argument('--seasonalStartDate', type=str, default='01/01', help='Seasonal start date in MM/DD format to filter experiments before.  Use this to select only part of the \
+                                year to collect data.  Defaults to Jan 1.')
+parser.add_argument('--seasonalEndDate', type=str, default='12/31', help='Seasonal end date in MM/DD format to filter experiments after.  Use this to select only part of the \
+                                    year to collect data.  Defaults to Dec 31.')
+parser.add_argument('--includeNonDefault', action='store_true', help='Include realtime files when no default')
+parser.add_argument('--expName', type=str, help='Filter experiments by experiment name. Give all or part of the experiment name. Matching \
+                     is case insensitive and fnmatch characters * and ? are allowed.')
+parser.add_argument('--excludeExpName', type=str, help='Exclude experiments by experiment name. Give all or part of the experiment name. Matching \
+                     is case insensitive and fnmatch characters * and ? are allowed.')
+parser.add_argument('--fileDesc', type=str, help='Filter files by file description string. Give all or part of the file description string. Matching \
+                     is case insensitive and fnmatch characters * and ? are allowed.')
+parser.add_argument('--dateList', help="comma separated list of date strings in the form YYYY-MM-DD, to get experiments for \
+                                a list of discrete days. Must include startDate and endDate. ")
+    
+args = parser.parse_args()
 
-optlist, args = getopt.getopt(sys.argv[1:], arglist, longarglist)
+# Validate and convert dates
+try:
+    args.startDate = datetime.datetime.strptime(args.startDate, '%Y-%m-%d')
+except Exception:
+    traceback.print_exc()
+    parser.error('startDate must be in format YYYY-MM-DD')
 
+try:
+    args.endDate = datetime.datetime.strptime(args.endDate, '%Y-%m-%d')
+except Exception:
+    traceback.print_exc()
+    parser.error('endDate must be in format YYYY-MM-DD')
+
+# Split comma separated lists into Python lists if provided
+args.inst = [item.strip() for item in args.inst.split(',')]
+
+if args.kindat:
+    args.kindat = [item.strip() for item in args.kindat.split(',')]
+
+if args.dateList:
+    args.dateList = [datetime.datetime.strptime(item.strip(), '%Y-%m-%d') for item in args.dateList.split(',')]
 
 # set default values
-user_fullname=None
-user_email=None
-user_affiliation=None
-startDate = None
-endDate = None
-inst = None
-kindat = None
-seasonalStartDate = None
-seasonalEndDate = None
-includeNonDefault = False
+user_fullname=args.user_fullname
+user_email=args.user_email
+user_affiliation=args.user_affiliation
+startDate = args.startDate
+endDate = args.endDate
+inst = args.inst
+kindat = args.kindat
+seasonalStartDate = args.seasonalStartDate
+seasonalEndDate = args.seasonalEndDate
+includeNonDefault = args.includeNonDefault
 skipVerification = False
-expName = None
-excludeExpName = None
-fileDesc = None
-
-# check if none passed in
-if len(optlist) == 0:
-    print(usage)
-    sys.exit(-1)
-    
-
-for opt in optlist:
-    if opt[0] == '--user_fullname':
-        user_fullname = opt[1]
-    elif opt[0] == '--user_email':
-        user_email = opt[1]
-    elif opt[0] == '--user_affiliation':
-        user_affiliation = opt[1]
-    elif opt[0] == '--startDate':
-        startDate = opt[1]
-    elif opt[0] == '--endDate':
-        endDate = opt[1]
-    elif opt[0] == '--inst':
-        inst = opt[1].split(',')
-    elif opt[0] == '--expName':
-        expName = opt[1]
-    elif opt[0] == '--excludeExpName':
-        excludeExpName = opt[1]
-    elif opt[0] == '--fileDesc':
-        fileDesc = opt[1]
-    elif opt[0] == '--kindat':
-        kindat = opt[1].split(',')
-    elif opt[0] == '--seasonalStartDate':
-        seasonalStartDate = opt[1]
-    elif opt[0] == '--seasonalEndDate':
-        seasonalEndDate = opt[1]
-    elif opt[0] == '--includeNonDefault':
-        includeNonDefault = True
-    elif opt[0] == '--skipVerification':
-        skipVerification = True
-
-    else:
-        raise ValueError('Illegal option %s\n%s' % (opt[0], usage))
-    
-# verify that no regular arguments were passed in
-if len(args) != 0:
-    print(usage)
-    raise ValueError('This command does not accept any arguments without options - may be due to illegal spaces in the command')
-
-# check that all required arguments passed in
-if startDate is None:
-    print(usage)
-    print('--startDate argument required')
-    sys.exit(-1)
-else:
-    try:
-        startDate = datetime.datetime.strptime(startDate, '%Y-%m-%d')
-    except:
-        traceback.print_exc()
-        print('startDate must be in format YYYY-MM-DD')
-        
-if endDate is None:
-    print(usage)
-    print('--endDate argument required')
-    sys.exit(-1)
-else:
-    try:
-        endDate = datetime.datetime.strptime(endDate, '%Y-%m-%d')
-    except:
-        traceback.print_exc()
-        print('endDate must be in format YYYY-MM-DD')
-
-if inst is None:
-    print(usage)
-    print('--inst argument required - must be a comma separated list of instrument codes or names')
-    sys.exit(-1)
-
-if user_fullname is None:
-    print(usage)
-    print('--user_fullname argument required - must your name')
-    sys.exit(-1)
-
-if user_email is None:
-    print(usage)
-    print('--user_email argument required - must your email address')
-    sys.exit(-1)
-
-if user_affiliation is None:
-    print(usage)
-    print('--user_affiliation argument required - must your affiliation')
-    sys.exit(-1)  
+expName = args.expName
+excludeExpName = args.excludeExpName
+fileDesc = args.fileDesc
+dateList = args.dateList
 
 # verify the url is valid
 server = madrigalWeb.madrigalWeb.MadrigalData('https://cedar.openmadrigal.org')
@@ -208,7 +162,7 @@ server = madrigalWeb.madrigalWeb.MadrigalData('https://cedar.openmadrigal.org')
 citationList = server.getCitationListFromFilters(startDate, endDate, inst, kindat, 
                                                  seasonalStartDate, seasonalEndDate, 
                                                  includeNonDefault, expName, excludeExpName, 
-                                                 fileDesc)
+                                                 fileDesc, dateList)
 
 print('\nThe following file citations will be in this group citation:\n')
 for citation in citationList:

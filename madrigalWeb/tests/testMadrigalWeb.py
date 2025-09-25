@@ -7,7 +7,8 @@ $Id: testMadrigalWeb.py 7700 2024-09-09 14:26:58Z brideout $
 
 # standard python modules
 import unittest
-import os, sys, os.path
+import os
+import os.path
 import datetime
 import tempfile
 import re
@@ -20,6 +21,7 @@ user_fullname = 'Bill Rideout - automated test'
 user_email = 'brideout@haystack.mit.edu'
 user_affiliation = 'MIT Haystack'
 url = 'http://millstonehill.haystack.mit.edu'
+# url = "https://cedar.openmadrigal.org"
 
 class TestMadrigalData(unittest.TestCase):
     """Unit test of main class madrigalWeb.madrigalWeb.MadrigalData
@@ -136,11 +138,6 @@ class TestMadrigalData(unittest.TestCase):
         result = str(result)
         self.assertTrue(result.find('1999.0, 2.0, 15.0') != -1)
         
-    def test_madTimeCalculator(self):
-        result = self.madData.madTimeCalculator(1999,2,15,12,30,0,1999,2,15,13,30,0,0.025E+1,'kp, ap3')
-        result = str(result)
-        self.assertTrue(result.find('1999.0, 2.0, 15.0') != -1)
-        
     def test_madCalculator2(self):
         result = self.madData.madCalculator2(1999,2,15,12,30,0,[45,55],[-170,-150],[200,300],'bmag, pdcon',
                                          ['kp'],[1.0],['ti','te','ne'],
@@ -162,12 +159,12 @@ class TestMadrigalData(unittest.TestCase):
         result = str(result)
         self.assertTrue(result.find('2001, 3, 19, 12, 30, 20, 45.0, -70.0, 145.0') != -1)
         
-    def test_geodeticToRadar(self):
+    def test_geodeticToRadar1(self):
         result = self.madData.geodeticToRadar(42.0, -70.0, 0.1, [50, 51,52], [-80.0, -70.0, -60.0], [200.0, 3.0E+2, 400.0])
         result = str(result)
         self.assertTrue(result.find('[-37.53, 4.02, 1210.47]') != -1)
         
-    def test_geodeticToRadar(self):
+    def test_geodeticToRadar2(self):
         result = self.madData.listFileTimes('experiments/1998/mlh/20jan98')
         result = str(result)
         self.assertTrue(result.find('experiments/1998/mlh/20jan98') != -1 and result.find('datetime.datetime(') != -1)
@@ -184,7 +181,7 @@ class TestMadrigalData(unittest.TestCase):
         self.assertFalse(result)
         
     def test_getCitedFilesFromUrl(self):
-        result = self.madData.getCitedFilesFromUrl('http://cedar.openmadrigal.org/getCitationGroup?id=1000')
+        result = self.madData.getCitedFilesFromUrl(f'{url}/getCitationGroup?id=1000')
         self.assertTrue(len(result) > 1)
         
     def test_getCitationListFromFilters(self):
@@ -193,6 +190,14 @@ class TestMadrigalData(unittest.TestCase):
         inst = ['Millstone*', 'Jicamarca*']
         result = self.madData.getCitationListFromFilters(startDate, endDate, inst)
         self.assertTrue(len(result) > 1)
+
+    def test_getCitationListFromFiltersWithDateList(self):
+        startDate = datetime.datetime(1998,1,1)
+        endDate = datetime.datetime(1998,12,1)
+        dateList = [datetime.datetime(1998,i,1) for i in range(1, 13)]
+        inst = ['Millstone*', 'Jicamarca*']
+        result = self.madData.getCitationListFromFilters(startDate, endDate, inst, dateList=dateList)
+        self.assertTrue(len(result) >= 12)
         
     def test_listFileTimes(self):
         expDir = 'experiments/1998/mlh/20jan98'

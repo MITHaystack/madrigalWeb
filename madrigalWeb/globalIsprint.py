@@ -115,11 +115,10 @@ usage = """
                                     
 """
 
+import argparse
 import sys
 import os
 import time
-import traceback
-import getopt
 import re
 import datetime
 import fnmatch
@@ -195,7 +194,7 @@ def getInstrumentList(inst, server):
             reObj = re.compile(item.replace('*', '.*'))
             for thisInst in allInst:
                 m = reObj.search(thisInst.name)
-                if m != None:
+                if m is not None:
                     retList.append(thisInst.code)
                     instFound = 1
         
@@ -583,38 +582,6 @@ def getOutputFileArg(fullFilename, format, output):
     return(os.path.join(output, basename + ext))
 
 
-
-# parse command line
-arglist = ''
-longarglist = ['url=',
-               'parms=',
-               'output=',
-               'user_fullname=',
-               'user_email=',
-               'user_affiliation=',
-               'startDate=',
-               'endDate=',
-               'inst=',
-               'format=',
-               'kindat=',
-               'filter=',
-               'seasonalStartDate=',
-               'seasonalEndDate=',
-               'showFiles',
-               'showSummary',
-               'hideParms',
-               'includeNonDefault',
-               'missing=',
-               'assumed=',
-               'knownbad=',
-               'verbose',
-               'expName=',
-               'excludeExpName=',
-               'fileDesc=']
-
-optlist, args = getopt.getopt(sys.argv[1:], arglist, longarglist)
-
-
 # set default values
 url = None
 parms = None
@@ -642,117 +609,86 @@ expName = None
 excludeExpName = None
 fileDesc = None
 
-# check if none passed in
-if len(optlist) == 0:
-    print(usage)
-    sys.exit(-1)
+# parse command line
+parser = argparse.ArgumentParser(
+        description='Run a global search through Madrigal data from a given URL matching given parameters and downloads data.',
+        usage=usage,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     
+# Required arguments
+parser.add_argument('--url', type=str, required=True, help="URL of the main page of a Madrigal site.")
+parser.add_argument('--parms', type=str, required=True, help='Comma-separated list of Madrigal mnemonics')
+parser.add_argument('--output', type=str, required=True, help='Writable file or directory path')
+parser.add_argument('--user_fullname', required=True, help='Full user name (quoted if contains spaces)')
+parser.add_argument('--user_email', required=True, help='User email address')
+parser.add_argument('--user_affiliation', required=True, help='User affiliation (quoted if contains spaces)')
 
-for opt in optlist:
-    if opt[0] == '--url':
-        url = opt[1]
-    elif opt[0] == '--parms':
-        parms = opt[1]
-    elif opt[0] == '--output':
-        output = opt[1]
-    elif opt[0] == '--user_fullname':
-        user_fullname = opt[1]
-    elif opt[0] == '--user_email':
-        user_email = opt[1]
-    elif opt[0] == '--user_affiliation':
-        user_affiliation = opt[1]
-    elif opt[0] == '--startDate':
-        startDate = opt[1]
-    elif opt[0] == '--endDate':
-        endDate = opt[1]
-    elif opt[0] == '--inst':
-        inst = opt[1]
-    elif opt[0] == '--format':
-        format = opt[1]
-    elif opt[0] == '--expName':
-        expName = opt[1]
-    elif opt[0] == '--excludeExpName':
-        excludeExpName = opt[1]
-    elif opt[0] == '--fileDesc':
-        fileDesc = opt[1]
-    elif opt[0] == '--kindat':
-        kindat = opt[1]
-    elif opt[0] == '--filter':
-        filterList.append('filter=' + opt[1])
-    elif opt[0] == '--seasonalStartDate':
-        seasonalStartDate = opt[1]
-    elif opt[0] == '--seasonalEndDate':
-        seasonalEndDate = opt[1]
-    elif opt[0] == '--showFiles':
-        showFiles = 1
-    elif opt[0] == '--includeNonDefault':
-        includeNonDefault = 1
-    elif opt[0] == '--showSummary':
-        showSummary = 1
-    elif opt[0] == '--hideParms':
-        hideParms = True
-    elif opt[0] == '--missing':
-        missing = opt[1]
-    elif opt[0] == '--assumed':
-       assumed  = opt[1]
-    elif opt[0] == '--knownbad':
-        knownbad = opt[1]
-    elif opt[0] == '--verbose':
-        verbose = 1
+# Optional arguments
+parser.add_argument('--startDate', required=True, help='Start date in YYYY-MM-DD format to filter experiments before.  Defaults to allow all experiments.')
+parser.add_argument('--endDate', required=True, help='End date in YYYY-MM-DD format to filter experiments after.  Defaults to allow all experiments.')
+parser.add_argument('--inst', default='0', help='Comma separated list of instrument codes or names. See Madrigal documentation \
+                                   for this list.  Defaults to allow all instruments. If names are given, the \
+                                   argument must be enclosed in double quotes.  An asterisk will perform matching as \
+                                   in glob.')
+parser.add_argument('--format', type=str, choices=['Hdf5', 'netCDF4', 'ascii'], help='Output data format (ascii, hdf5, netCDF4).')
+parser.add_argument('--kindat', default='0', help='Comma separated list of kind of data codes. See Madrigal documentation \
+                                       for this list.  Defaults to allow all kinds of data.  If names are given, the \
+                                       argument must be enclosed in double quotes.  An asterisk will perform matching as \
+                                       in glob.')
+parser.add_argument('--filter', type=str, help='<[mnemonic] or [mnemonic1,[+-*/]mnemonic2]>,<lower limit1>,<upper limit1>[or<lower limit2>,<upper limit2>...] \
+   a filter using any measured or derived Madrigal parameter, or two Madrigal parameters either added, \
+   subtracted, multiplied or divided.  Each filter has one or more allowed ranges.  The filter accepts \
+   data that is in any allowed range.  If the Madrigal parameter value is missing, the filter will always \
+   reject that data.  Multiple filter arguments are allowed on the command line.  To skip either a lower \
+   limit or an upper limit, leave it blank.')
+parser.add_argument('--seasonalStartDate', type=str, default='01/01', help='Seasonal start date in MM/DD format to filter experiments before.  Use this to select only part of the \
+                                year to collect data.  Defaults to Jan 1.')
+parser.add_argument('--seasonalEndDate', type=str, default='12/31', help='Seasonal end date in MM/DD format to filter experiments after.  Use this to select only part of the \
+                                    year to collect data.  Defaults to Dec 31.')
+parser.add_argument('--showFiles', action='store_true', help='If given, show file names.  Default is to not show file names. Not used if format in <Hdf5, netCDF4>')
+parser.add_argument('--showSummary', action='store_true', help='if given, summarize all arguments at the beginning.  Not used if format in <Hdf5, netCDF4>. \
+   Default is to not show summary.')
+parser.add_argument('--hideParms', action='store_true', help='Hide parameters flag')
+parser.add_argument('--includeNonDefault', action='store_true', help='Include realtime files when no default')
+parser.add_argument('--missing', type=str, default='missing', help='Missing value label')
+parser.add_argument('--assumed', type=str, default='assumed', help='Assumed value label')
+parser.add_argument('--knownbad', type=str, default='knownbad', help='Known bad value label')
+parser.add_argument('--verbose', action='store_true', help='Flag to enable verbose output.')
+parser.add_argument('--expName', type=str, help='Filter experiments by experiment name. Give all or part of the experiment name. Matching \
+                     is case insensitive and fnmatch characters * and ? are allowed.')
+parser.add_argument('--excludeExpName', type=str, help='Exclude experiments by experiment name. Give all or part of the experiment name. Matching \
+                     is case insensitive and fnmatch characters * and ? are allowed.')
+parser.add_argument('--fileDesc', type=str, help='Filter files by file description string. Give all or part of the file description string. Matching \
+                     is case insensitive and fnmatch characters * and ? are allowed.')
+args = parser.parse_args()
 
-    else:
-        raise ValueError('Illegal option %s\n%s' % (opt[0], usage))
-    
-# verify that no regular arguments were passed in
-if len(args) != 0:
-    print(usage)
-    raise ValueError('This command does not accept any arguments without options - may be due to illegal spaces in the command')
-
-# check that all required arguments passed in
-if url is None:
-    print(usage)
-    print('--url argument required - must be the url of the main page of a Madrigal site')
-    sys.exit(-1)
-
-if parms is None:
-    print(usage)
-    print('--parms argument required - must be a comma-separated list of Madrigal mnemonics')
-    sys.exit(-1)
-
-if output is None:
-    print(usage)
-    print('--output argument required - must be a valid, writable file or directory path')
-    sys.exit(-1)
-
-if user_fullname is None:
-    print(usage)
-    print('--user_fullname argument required - must your name')
-    sys.exit(-1)
-
-if user_email is None:
-    print(usage)
-    print('--user_email argument required - must your email address')
-    sys.exit(-1)
-
-if user_affiliation is None:
-    print(usage)
-    print('--user_affiliation argument required - must your affiliation')
-    sys.exit(-1)
-    
-if not format is None:
-    if format not in ('Hdf5', 'netCDF4', 'ascii'):
-        print(usage)
-        print(('Format must be in Hdf5, netCDF4, or ascii, not <%s>' % (str(format))))
-        sys.exit(-1)
-    # output must be a writeable directory
-    if not os.path.isdir(output):
-        print(usage)
-        print(('If format set, output <%s> must be a writable directory.  To write to a single ascii file, do not specify format.' % (output)))
-        sys.exit(-1)
-    if not os.access(output, os.W_OK):
-        print(usage)
-        print(('If format set, output <%s> must be a writable directory.  To write to a single ascii file, do not specify format.' % (output)))
-        sys.exit(-1)
+# Set default values for variables
+url = args.url
+parms = args.parms
+output = args.output
+user_fullname = args.user_fullname
+user_email = args.user_email
+user_affiliation = args.user_affiliation
+startDate = args.startDate
+endDate = args.endDate
+inst = args.inst
+format = args.format
+kindat = args.kindat
+filterList = args.filter if args.filter else []
+seasonalStartDate = args.seasonalStartDate
+seasonalEndDate = args.seasonalEndDate
+showFiles = 1 if args.showFiles else 0
+includeNonDefault = 1 if args.includeNonDefault else 0
+showSummary = 1 if args.showSummary else 0
+hideParms = args.hideParms
+missing = args.missing
+assumed = args.assumed
+knownbad = args.knownbad
+verbose = 1 if args.verbose else 0
+expName = args.expName
+excludeExpName = args.excludeExpName
+fileDesc = args.fileDesc
 
 # set startDate
 if startDate is None:
@@ -801,6 +737,15 @@ else:
         print('Invalid endDate <%s>' % (str(endDate)))
         sys.exit(-1)
 
+# output must be a writeable directory
+if not os.path.isdir(output):
+    print(usage)
+    print(('If format set, output <%s> must be a writable directory.  To write to a single ascii file, do not specify format.' % (output)))
+    sys.exit(-1)
+if not os.access(output, os.W_OK):
+    print(usage)
+    print(('If format set, output <%s> must be a writable directory.  To write to a single ascii file, do not specify format.' % (output)))
+
 timeList = (startyear, startmonth, startday, 0, 0, 0,
             endyear, endmonth, endday, 23, 59, 59)
     
@@ -833,11 +778,11 @@ if seasonalStartDate != '01/01' or seasonalEndDate != '12/31':
     expList = filterExperimentsUsingSeason(expList, seasonalStartDate, seasonalEndDate)
 
 # filter experiments using expName if needed
-if expName != None:
+if expName is not None:
     expList = filterExperimentsUsingExpName(expList, expName)
     
 # exclude experiments using expName if needed
-if excludeExpName != None:
+if excludeExpName is not None:
     expList = excludeExperimentsUsingExpName(expList, excludeExpName)
 
 # get list of all experiment files given the expList
@@ -853,7 +798,7 @@ if includeNonDefault == 0:
     expFileList = filterExperimentFilesUsingStatus(expFileList)
     
 # filter expFileList using fileDesc filter if needed
-if fileDesc != None:
+if fileDesc is not None:
     expFileList = filterExperimentFilesUsingFileDesc(expFileList, fileDesc)
 
 # print error if no files selected
@@ -904,7 +849,8 @@ for i in range(numFiles):
                               user_fullname,
                               user_email,
                               user_affiliation,
-                              outputFileArg)
+                              outputFileArg,
+                              verbose=verbose)
         if format is None:
             # modify any special value
             if missing != 'missing':
@@ -962,6 +908,7 @@ for i in range(numFiles):
 
 if format is None:
     outputFile.close()
+
 
 
 

@@ -5,10 +5,11 @@
 # $Id: madrigalWeb.py 7664 2024-07-30 14:39:18Z brideout $
 
 # standard python imports
-import os, os.path, sys
+import os
+import os.path
 import traceback
-import urllib.request, urllib.parse
-import types
+import urllib.request
+import urllib.parse
 import re
 import datetime
 
@@ -20,16 +21,9 @@ TIMEOUT = 60 * 30 # timeout in seconds before skipping file
 TIMEOUT2 = 60 * 3 # shorter time out
 
 def isStringType(input):
-    """isStringType is a method designed to work with both python 2 and 3 to test for string type
+    """isStringType is a method to test for string type. 
     """
-    if type(input) == str:
-        return(True)
-    try:
-        if type(input) == unicode:
-            return(True)
-    except:
-        return(False)
-    return(False)
+    return(isinstance(input, str))
 
 
 class MadrigalData:
@@ -78,18 +72,16 @@ class MadrigalData:
 
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT2)
+            with urllib.request.urlopen(url, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf-8')
         except:
             raise ValueError('unable to open url ' + str(url))
 
-        page = mainUrl.read().decode('utf-8')
-        
-        mainUrl.close()
 
         result = regExp.search(page)
         
         # check for success
-        if result == None:
+        if result is None:
             raise ValueError('invalid url: ' + str(url))
 
         result = result.group()
@@ -120,11 +112,8 @@ class MadrigalData:
         """
         url = urllib.parse.urljoin(self.cgiurl, 'getMetadata?fileType=5')
         
-        f = urllib.request.urlopen(url, timeout=TIMEOUT2)
-
-        page = f.read().decode('utf-8')
-
-        f.close()
+        with urllib.request.urlopen(url, timeout=TIMEOUT2) as f:
+            page = f.read().decode('utf-8')
 
         lines = page.split('\n')
 
@@ -148,11 +137,8 @@ class MadrigalData:
         """
         url = urllib.parse.urljoin(self.cgiurl, 'getMetadata?fileType=0')
 
-        f = urllib.request.urlopen(url, timeout=TIMEOUT2)
-
-        page = f.read().decode('utf-8')
-
-        f.close()
+        with urllib.request.urlopen(url, timeout=TIMEOUT2) as f:
+            page = f.read().decode('utf-8')
 
         lines = page.split('\n')
 
@@ -178,14 +164,11 @@ class MadrigalData:
 
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT2)
+            with urllib.request.urlopen(url, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf8')
+                page = page.split('\n')
         except:
             raise ValueError('unable to open url ' + str(url))
-
-        page = mainUrl.read().decode('utf8')
-        page = page.split('\n')
-
-        mainUrl.close()
 
         # parse the result
         if len(page) == 0:
@@ -284,7 +267,7 @@ class MadrigalData:
         url = self.cgiurl + scriptName + '?'
 
         # first append code(s)
-        if type(code) == list:
+        if isinstance(code, list):
             for item in code:
                 url += 'code=%i&' % (int(item))
         else:
@@ -309,17 +292,12 @@ class MadrigalData:
 
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT2)
+            with urllib.request.urlopen(url, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf8', errors='replace')
+                page = page.split('\n')
         except:
             raise ValueError('unable to open url ' + str(url))
                 
-
-        
-
-        page = mainUrl.read().decode('utf8', errors='replace')
-        page = page.split('\n')
-
-        mainUrl.close()
 
         # parse the result
         if len(page) == 0:
@@ -428,15 +406,12 @@ class MadrigalData:
 
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT2)
+            with urllib.request.urlopen(url, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf8')
+                page = page.split('\n')
         except:
             raise ValueError('unable to open url ' + str(url))
                 
-
-        page = mainUrl.read().decode('utf8')
-        page = page.split('\n')
-
-        mainUrl.close()
 
         # parse the result
         if len(page) == 0:
@@ -507,15 +482,12 @@ class MadrigalData:
 
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT2)
+            with urllib.request.urlopen(url, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf8')
+                page = page.split('\n')
         except:
             raise ValueError('unable to open url ' + str(url))
                 
-
-        page = mainUrl.read().decode('utf8')
-        page = page.split('\n')
-
-        mainUrl.close()
 
         # parse the result
         if len(page) == 0:
@@ -593,7 +565,7 @@ class MadrigalData:
 
         
 
-    def isprint(self, filename, parms, filters, user_fullname, user_email, user_affiliation, outputFile=None):
+    def isprint(self, filename, parms, filters, user_fullname, user_email, user_affiliation, outputFile=None, verbose=True):
         """returns as a string the isprint output given filename, parms, filters without headers or summary.
 
         Inputs:
@@ -667,16 +639,15 @@ class MadrigalData:
         # read main url
         url = url.replace('+', '%2B')
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT)
+            with urllib.request.urlopen(url, timeout=TIMEOUT) as mainUrl:
+                if format == 'ascii':
+                    page = mainUrl.read().decode('utf-8')
+                else:
+                    page = mainUrl.read()
         except:
             raise ValueError('unable to open url ' + str(url))
                 
-        if format == 'ascii':
-            page = mainUrl.read().decode('utf-8')
-        else:
-            page = mainUrl.read()
-
-        mainUrl.close()
+        
 
         if format == 'ascii':
             if page.find('Error occurred') != -1:
@@ -687,11 +658,24 @@ class MadrigalData:
         
         else:
             if format == 'ascii':
-                f = open(outputFile, 'w')
+                with open(outputFile, 'w') as f:
+                    f.write(page)
             else:
-                f = open(outputFile, 'wb')
-            f.write(page)
-            f.close()
+                with open(outputFile, 'wb') as f:
+                    f.write(page)
+
+            # check that final file is not empty
+            if os.path.getsize(outputFile) == 0:
+                if verbose:
+                    print(f"Downloaded file {outputFile} is empty, removing..")
+                os.system(f"rm {outputFile}")
+                    
+            # success
+            if verbose:
+                print(f"Downloaded file {outputFile}")
+
+
+                    
 
 
     def madCalculator(self,
@@ -817,15 +801,12 @@ class MadrigalData:
 
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT)
+            with urllib.request.urlopen(url, timeout=TIMEOUT) as mainUrl:
+                page = mainUrl.read().decode('utf8')
+                page = page.split('\n')
         except:
             raise ValueError('unable to open url ' + str(url))
                 
-
-        page = mainUrl.read().decode('utf8')
-        page = page.split('\n')
-
-        mainUrl.close()
 
         # parse the result
         if len(page) == 0:
@@ -962,7 +943,6 @@ class MadrigalData:
         
         postUrl = 'year'
         # append arguments
-        delimiter = ','
         postUrl += '=%i&month' % (int(year))
         postUrl += '=%i&day' % (int(month))
         postUrl += '=%i&hour' % (int(day))
@@ -1003,15 +983,12 @@ class MadrigalData:
         # read main url
         try:
             req = urllib.request.Request(url)
-            response = urllib.request.urlopen(req, data=data, timeout=TIMEOUT)
+            with urllib.request.urlopen(req, data=data, timeout=TIMEOUT) as response:
+                page = response.read().decode('utf8')
+                page = page.split('\n')
         except:
             raise ValueError('unable to open url ' + str((url, postUrl)))
                 
-
-        page = response.read().decode('utf8')
-        page = page.split('\n')
-
-        response.close()
 
         # parse the result
         if len(page) == 0:
@@ -1286,15 +1263,12 @@ class MadrigalData:
         # read main url
         try:
             req = urllib.request.Request(url)
-            response = urllib.request.urlopen(req, data=data, timeout=TIMEOUT)
+            with urllib.request.urlopen(req, data=data, timeout=TIMEOUT) as response:
+                page = response.read().decode('utf8')
+                page = page.split('\n')
         except:
             raise ValueError('unable to open url ' + str((url, postUrl)))
                 
-
-        page = response.read().decode('utf8')
-        page = page.split('\n')
-
-        response.close()
 
         # parse the result
         if len(page) == 0:
@@ -1438,15 +1412,12 @@ class MadrigalData:
 
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT)
+            with urllib.request.urlopen(url, timeout=TIMEOUT) as mainUrl:
+                page = mainUrl.read().decode('utf8')
+                page = page.split('\n')
         except:
             raise ValueError('unable to open url ' + str(url))
                 
-
-        page = mainUrl.read().decode('utf8')
-        page = page.split('\n')
-
-        mainUrl.close()
 
         # parse the result
         if len(page) == 0:
@@ -1516,7 +1487,7 @@ class MadrigalData:
         url += '=%f&saltgd' % (float(slon))
         url += '=%f&' % (float(saltgd))
 
-        if type(az) == list or type(az) == tuple:
+        if isinstance(az, list) or isinstance(az, tuple):
             if len(az) != len(el) or len(az) != len(radarRange):
                 raise ValueError('all lists most have same length')
             for i in range(len(az)):
@@ -1550,14 +1521,12 @@ class MadrigalData:
 
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT2)
+            with urllib.request.urlopen(url, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf8')
+                page = page.split('\n')
         except:
             raise ValueError('unable to open url ' + str(url))
                 
-        page = mainUrl.read().decode('utf8')
-        page = page.split('\n')
-
-        mainUrl.close()
 
         # parse the result
         if len(page) == 0:
@@ -1626,7 +1595,7 @@ class MadrigalData:
         url += '=%f&saltgd' % (float(slon))
         url += '=%f&' % (float(saltgd))
 
-        if type(gdlat) == list or type(gdlat) == tuple:
+        if isinstance(gdlat, list) or isinstance(gdlat, tuple):
             if len(gdlat) != len(glon) or len(gdlat) != len(gdalt):
                 raise ValueError('all lists most have same length')
             for i in range(len(gdlat)):
@@ -1660,14 +1629,12 @@ class MadrigalData:
 
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT2)
+            with urllib.request.urlopen(url, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf8')
+                page = page.split('\n')
         except:
             raise ValueError('unable to open url ' + str(url))
                 
-        page = mainUrl.read().decode('utf8')
-        page = page.split('\n')
-
-        mainUrl.close()
 
         # parse the result
         if len(page) == 0:
@@ -1767,39 +1734,53 @@ class MadrigalData:
         
         CHUNK = 16 * 1024
 
-        urlFile = urllib.request.urlopen(url, timeout=TIMEOUT)
-        
-        if format in ('ascii', 'simple'):
-            f = open(destination, 'w')
-        else:
-            f = open(destination, 'wb')
+        isgzip = False
 
-        while(True):
-            if format in ('ascii', 'simple'):
-                try:
-                    data = urlFile.read(CHUNK).decode('utf8')
-                except:
-                    # probably gzip ascii - convert
-                    f.close()
-                    try:
-                        os.remove(destination)
-                    except:
-                        pass
-                    urlFile.close()
-                    urlFile = urllib.request.urlopen(url, timeout=TIMEOUT)
-                    f = open(destination + '.gz', 'wb')
-                    format = 'gzip'
-                    data = urlFile.read(CHUNK)
-                    
-            else:
-                data = urlFile.read(CHUNK)
-            if not data:
-                break
-            f.write(data)
+        if not isgzip:
+            with urllib.request.urlopen(url, timeout=TIMEOUT) as urlFile:
+                readtype = None
+                if format in ('ascii', 'simple'):
+                    readtype = 'w'
+                    #f = open(destination, 'w')
+                else:
+                    readtype = 'wb'
+                    #f = open(destination, 'wb')
+
+                with open(destination, readtype) as f:
+                    while(True):
+                        if format in ('ascii', 'simple'):
+                            try:
+                                data = urlFile.read(CHUNK).decode('utf8')
+                            except:
+                                # probably gzip ascii - convert
+                                isgzip = True
+                                break
+                                
+                                
+                        else:
+                            data = urlFile.read(CHUNK)
+                        if not data:
+                            break
+                        f.write(data)
+        else:
+            # handle gzip ascii
+            try:
+                os.remove(destination)
+            except:
+                pass
             
-        urlFile.close()
-        
-        f.close()
+            with urllib.request.urlopen(url, timeout=TIMEOUT) as urlFile:
+                with open(destination + '.gz', 'wb') as f:
+                    format = 'gzip'
+                    while(True):
+                        try:
+                            data = urlFile.read(CHUNK)
+                        except:
+                            pass
+                        if not data:
+                            break
+
+            
         
         
     
@@ -1827,11 +1808,11 @@ class MadrigalData:
         
         url = url.replace('+', '%2B')
 
-        urlFile = urllib.request.urlopen(url, timeout=TIMEOUT)
+        with urllib.request.urlopen(url, timeout=TIMEOUT) as urlFile:
+            data = urlFile.read().decode('utf-8')
         
         retList = []
 
-        data = urlFile.read().decode('utf-8')
         lines = data.split('\n')
         for line in lines:
             items = line.split(',')
@@ -1863,17 +1844,12 @@ class MadrigalData:
         url += '?expPath=%s' % (expPath.replace(' ', '+'))
         url = url.replace('+', '%2B')
         
-        urlFile = urllib.request.urlopen(url, timeout=TIMEOUT2)
-
-        data = urlFile.read()
-
-        urlFile.close()
+        with urllib.request.urlopen(url, timeout=TIMEOUT2) as urlFile:
+            data = urlFile.read()
         
-        f = open(destination, 'wb')
+        with open(destination, 'wb') as f:
+            f.write(data)
 
-        f.write(data)
-
-        f.close()
         
         
         
@@ -1952,7 +1928,7 @@ class MadrigalData:
         url += 'in3=%s&' % (in3Str)
         url += 'model=%i&' % (int(model))
         url += 'qualifier=%i&' % (int(qualifier))
-        if stopAlt == None:
+        if stopAlt is None:
             if int(qualifier) in (1,2):
                 raise ValueError('stopAlt must be set for qualifer in (1,2)')
             else:
@@ -1964,14 +1940,11 @@ class MadrigalData:
 
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT2)
+            with urllib.request.urlopen(url, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf8')
+                page = page.split('\n')
         except:
             raise ValueError('unable to open url ' + str(url))
-
-        page = mainUrl.read().decode('utf8')
-        page = page.split('\n')
-
-        mainUrl.close()
 
         # parse the result
         if len(page) == 0:
@@ -2006,14 +1979,12 @@ class MadrigalData:
 
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT2)
+            with urllib.request.urlopen(url, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf-8')
         except:
+            traceback.print_exc()
             # if this fails, must be 2.5
             return('2.5')
-
-        page = mainUrl.read().decode('utf-8')
-
-        mainUrl.close()
         
         return(page.strip())
     
@@ -2032,14 +2003,11 @@ class MadrigalData:
         """
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT2)
+            with urllib.request.urlopen(url, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf8')
+                page = page.strip().split('\n')
         except:
             raise ValueError('unable to open url ' + str(url))
-
-        page = mainUrl.read().decode('utf8')
-        page = page.strip().split('\n')
-
-        mainUrl.close()
         
         return(page)
     
@@ -2084,14 +2052,11 @@ class MadrigalData:
         try:
             data = urllib.parse.urlencode(citationDict).encode()
             req = urllib.request.Request(url, data=data)
-            mainUrl = urllib.request.urlopen(req, timeout=TIMEOUT2)
+            with urllib.request.urlopen(req, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf8')
+                page = page.strip()
         except:
             raise ValueError('unable to open url ' + str(url))
-
-        page = mainUrl.read().decode('utf8')
-        page = page.strip()
-
-        mainUrl.close()
         
         return(page)
     
@@ -2099,7 +2064,7 @@ class MadrigalData:
     def getCitationListFromFilters(self, startDate, endDate, inst=None, kindat=None, 
                            seasonalStartDate=None, seasonalEndDate=None, 
                            includeNonDefault=False, expName=None, excludeExpName=None, 
-                           fileDesc=None):
+                           fileDesc=None, dateList=None):
         """getCitationListFromFilters returns a list of citations using filters similar to globalDownload.
         Result can then be used to create citation group using createCitationGroupFromList 
         
@@ -2122,11 +2087,13 @@ class MadrigalData:
                     If None, no excluding experiments by experiment name.
                 fileDesc: filter files using input file Description string via fnmatch. 
                     If None, no filtering by file name
+                dateList: comma separated list of date strings in the form YYYY-MM-DD, to get experiments for 
+                    a list of discrete days. Must include startDate and endDate.
         
         Returns a list with all citations in group, which can be used in createCitationGroupFromList
         """
         url = 'https://cedar.openmadrigal.org/getCitationGroupWithFilters?'
-        # temp only - until cedar updated
+        # for testing purposes only
         # url = 'http://127.0.0.1:8000/getCitationGroupWithFilters?'
         url += 'startDate=%s&' % (startDate.strftime('%Y-%m-%d'))
         url += 'endDate=%s&' % (endDate.strftime('%Y-%m-%d'))
@@ -2148,18 +2115,19 @@ class MadrigalData:
             url += 'excludeExpName=%s&' % (urllib.parse.quote_plus(excludeExpName.strip()))
         if not fileDesc is None:
             url += 'fileDesc=%s&' % (urllib.parse.quote_plus(fileDesc.strip()))
+        if not dateList is None:
+            for thisDate in dateList:
+                # the 'Z' indicates UTC
+                url += 'dateList=%s&' % (thisDate.strftime('%Y-%m-%dZ'))
             
             
         # read main url
         try:
-            mainUrl = urllib.request.urlopen(url, timeout=TIMEOUT2)
+            with urllib.request.urlopen(url, timeout=TIMEOUT2) as mainUrl:
+                page = mainUrl.read().decode('utf8')
+                page = page.strip().split('\n')
         except:
             raise ValueError('unable to open url ' + str(url))
-
-        page = mainUrl.read().decode('utf8')
-        page = page.strip().split('\n')
-
-        mainUrl.close()
         
         return(page)
     
@@ -2719,7 +2687,7 @@ class MadrigalExperimentFile:
 
         self.permission = int(permission)
 
-        if expId == None:
+        if expId is None:
             self.expId = None
         else:
             self.expId = int(expId)
