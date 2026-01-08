@@ -582,33 +582,6 @@ def getOutputFileArg(fullFilename, format, output):
     return(os.path.join(output, basename + ext))
 
 
-# set default values
-url = None
-parms = None
-output = None
-user_fullname=None
-user_email=None
-user_affiliation=None
-startDate = None
-endDate = None
-inst = '0'
-format = None
-kindat = '0'
-filterList = []  # since more than one allowed
-seasonalStartDate = '01/01'
-seasonalEndDate = '12/31'
-showFiles = 0
-includeNonDefault = 0
-showSummary = 0
-hideParms = False
-missing = 'missing'
-assumed = 'assumed'
-knownbad = 'knownbad'
-verbose = 0
-expName = None
-excludeExpName = None
-fileDesc = None
-
 # parse command line
 parser = argparse.ArgumentParser(
         description='Run a global search through Madrigal data from a given URL matching given parameters and downloads data.',
@@ -631,7 +604,7 @@ parser.add_argument('--inst', default='0', help='Comma separated list of instrum
                                    for this list.  Defaults to allow all instruments. If names are given, the \
                                    argument must be enclosed in double quotes.  An asterisk will perform matching as \
                                    in glob.')
-parser.add_argument('--format', type=str, choices=['Hdf5', 'netCDF4', 'ascii'], help='Output data format (ascii, hdf5, netCDF4).')
+parser.add_argument('--format', type=str, default=None, choices=['Hdf5', 'netCDF4', 'ascii'], help='Output data format (ascii, hdf5, netCDF4).')
 parser.add_argument('--kindat', default='0', help='Comma separated list of kind of data codes. See Madrigal documentation \
                                        for this list.  Defaults to allow all kinds of data.  If names are given, the \
                                        argument must be enclosed in double quotes.  An asterisk will perform matching as \
@@ -738,11 +711,11 @@ else:
         sys.exit(-1)
 
 # output must be a writeable directory
-if not os.path.isdir(output):
+if not os.path.isdir(output) and not format is None:
     print(usage)
     print(('If format set, output <%s> must be a writable directory.  To write to a single ascii file, do not specify format.' % (output)))
     sys.exit(-1)
-if not os.access(output, os.W_OK):
+if not os.access(output, os.W_OK) and not format is None:
     print(usage)
     print(('If format set, output <%s> must be a writable directory.  To write to a single ascii file, do not specify format.' % (output)))
 
