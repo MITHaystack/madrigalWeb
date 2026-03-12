@@ -13,9 +13,6 @@ import urllib.parse
 import re
 import datetime
 
-# third party imports
-import packaging.version
-
 # constants
 TIMEOUT = 60 * 30 # timeout in seconds before skipping file
 TIMEOUT2 = 60 * 3 # shorter time out
@@ -628,11 +625,6 @@ class MadrigalData:
                 format = 'netCDF4'
             else:
                 format = 'ascii'
-            # if Hdf5 or netCDF4, make sure site is 3 or greater
-            if format in ('Hdf5', 'netCDF4'):
-                version = self.getVersion()
-                if packaging.version.parse(version) < packaging.version.parse('3.0'):
-                    raise ValueError('Madrigal site at %s is below 3.0, cannot convert to Hdf5 or netCDF4' % (self.cgiurl))
         else:
             format = 'ascii'
 
@@ -915,10 +907,6 @@ class MadrigalData:
         Now uses POST to avoid long url issue
 
     """
-    
-        # verify Madrigal site can call this command
-        if self.compareVersions('2.6', self._madVers):
-            raise IOError('madCalculator2 requires Madrigal 2.6 or greater, but this site is version %s' % (self._madVers))
 
         scriptName = 'madCalculator2Service.py'
         
@@ -1127,10 +1115,6 @@ class MadrigalData:
                 Columns:     year month day hour minute second gdlat  glon  gdalt  bmag  pdcon  ne_model
 
     """
-        # verify Madrigal site can call this command
-        if self.compareVersions('2.6', self._madVers):
-            raise IOError('madCalculator3 requires Madrigal 2.6 or greater, but this site is version %s' % (self._madVers))
-
 
         scriptName = 'madCalculator3Service.py'
 
@@ -1688,39 +1672,20 @@ class MadrigalData:
                      
                 hdf5 format works for Madrigal 2.6 or later
                 netCDF4 format works for Madrigal 3.0 or later
-                madrigal', 'blockedBinary', 'ncar',
+                'madrigal', 'blockedBinary', 'ncar',
                  'unblockedBinary', or 'ascii' no longer supported for Madrigal 3.
 
         """
-        fileType = 0
-        if format not in ('hdf5', 'madrigal', 'blockedBinary', 'ncar', 
-                          'unblockedBinary', 'ascii', 'simple', 'netCDF4'):
+        if format not in ('hdf5', 'ascii', 'simple', 'netCDF4'):
             raise ValueError('Illegal format specified: %s' % (str(format)))
-        if format == 'blockedBinary':
-            fileType = 1
-        elif format == 'ncar':
-            fileType = 2
-        elif format == 'unblockedBinary':
-            fileType = 3
         elif format == 'simple':
             fileType = -1
         elif format == 'hdf5':
-            # verify Madrigal site can handle this argument
-            if self.compareVersions('2.6', self._madVers):
-                raise IOError('downloadFile with hdf5 format requires Madrigal 2.6 or greater, but this site is version %s' % (self._madVers))
             fileType = -2
         elif format == 'netCDF4':
-            # verify Madrigal site can handle this argument
-            if self.compareVersions('3.0', self._madVers):
-                raise IOError('downloadFile with netCDF4 format requires Madrigal 3.0 or greater, but this site is version %s' % (self._madVers))
             fileType = -3
         else:
-            fileType = 4
-            
-        # verify no old formats specified if Madrigal 3
-        if fileType > 0:
-            if not self.compareVersions('3.0', self._madVers):
-                raise IOError('Only Madrigal 2.X sites can create old style files, but this site is version %s' % (self._madVers))
+            fileType = 0
 
         
         url = urllib.parse.urljoin(self.cgiurl,'getMadfile.cgi?fileName=%s&fileType=%i&' % (filename, fileType))
@@ -1797,10 +1762,6 @@ class MadrigalData:
             
         Requires:  Madrigal 2.6 or greater
         """
-        # verify Madrigal site can call this command
-        if self.compareVersions('2.6', self._madVers):
-            raise IOError('listFileTimes requires Madrigal 2.6 or greater, but this site is version %s' % (self._madVers))
-    
         url = urllib.parse.urljoin(self.cgiurl,'listFileTimesService.py')
         
         if expDir:
@@ -1835,9 +1796,6 @@ class MadrigalData:
             expPath - filename relative to experiments[0-9]* directory. As returned by listFileTimes.
             destination - path to save file to
         """
-        # verify Madrigal site can call this command
-        if self.compareVersions('3.0', self._madVers):
-            raise IOError('downloadWebFile requires Madrigal 3.0 or greater, but this site is version %s' % (self._madVers))
         
         url = urllib.parse.urljoin(self.cgiurl,'downloadWebFileService.py')
         
@@ -1987,14 +1945,6 @@ class MadrigalData:
             return('2.5')
         
         return(page.strip())
-    
-    
-    def compareVersions(self, ver1, ver2):
-        """compareVersions returns False if ver1 <= ver2, 0 True otherwise
-        
-        Inputs: version number strings, in form number dot number (any number of dots)
-        """
-        return(packaging.version.parse(ver1) > packaging.version.parse(ver2))
             
 
     def getCitedFilesFromUrl(self, url):

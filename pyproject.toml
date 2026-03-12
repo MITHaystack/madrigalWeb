@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "madrigalWeb"
-version = "3.3.6"
+version = "3.3.7"
 authors = [
   { name="Bill Rideout", email="brideout@mit.edu" },
   { name="Katherine Cariglia", email="cariglia@mit.edu" },
@@ -12,8 +12,7 @@ authors = [
 description = "Python Madrigal Remote API"
 readme = "README.md"
 requires-python = ">=3.3"
-dependencies = [
-    "packaging",]
+dependencies = []
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
