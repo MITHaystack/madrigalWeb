@@ -1,0 +1,26 @@
+# This workflow uses ruff to check and reformat the project code.
+
+name: lint
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+
+  do-lint:
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install the code linting and formatting tool Ruff
+        run: pip install ruff
+      - name: Lint code with Ruff
+        run: ruff check
+      - name: Check code formatting with Ruff
+        run: ruff format
+        continue-on-error: false

@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 
-"""This script runs a global search through Madrigal data from a given URL.
+"""globalIsprint.py is a script that runs a global search through Madrigal data from a given URL.
 
-    This script is a stand-alone application, and can be run from anywhere with a connection to the internet.
-    It runs on either unix or windows.  It requires only the MadrigalWeb python module to be installed.
+This script is a stand-alone application, and can be run from anywhere with a connection to the internet.
+It runs on either unix or windows.  It requires only the MadrigalWeb python module to be installed.
 
-$Id: globalIsprint.py 7369 2021-04-22 17:55:08Z brideout $
+Examples
+--------
+>>>globalIsprint.py --url=https://cedar.openmadrigal.org --parms=gdalt,ti --output=/tmp/tmpshqn_dvv/out.txt --user_fullname=CI_Test --user_email=citest@example.com --user_affiliation=Test --startDate=01/19/1998 --endDate=01/21/1998 --inst=30
 """
+
+# $Id: globalIsprint.py 7369 2021-04-22 17:55:08Z brideout $
 
 usage = """
         Usage:
@@ -125,28 +129,31 @@ import fnmatch
 
 import madrigalWeb.madrigalWeb
 
+
 def getInstrumentList(inst, server):
-    """getInstrumentList takes the user argument inst and coverts it into a list of instrument codes.
+    """GetInstrumentList takes the user argument inst and coverts it into a list of instrument codes.
 
-    Inputs:
+    Parameters
+    ----------
+    inst : string
+        a string containing a comma separated list of instrument codes or names.  If names are given,
+        the argument must be enclosed in double quotes.  An asterick will perform matching as in glob.
+        Both names and codes may be mixed together.
+    server : MadrigalData object
+        the active MadrigalData object to get information from
 
-        inst - a string containing a comma separated list of instrument codes or names.  If names are given,
-                the argument must be enclosed in double quotes.  An asterick will perform matching as in glob.
-                Both names and codes may be mixed together.
-
-        server - the active MadrigalData object to get information from
-
-    Returns:
-
+    Returns
+    -------
+    list of ints
         a list of instrument codes (int).  Instrument code 0 means all instruments
     """
-    if inst == '0':
+    if inst == "0":
         return [0]
 
     retList = []
-            
+
     # make a list
-    stringList = inst.split(',')
+    stringList = inst.split(",")
     # see if any are names
     nameFound = 0
     for item in stringList:
@@ -155,13 +162,12 @@ def getInstrumentList(inst, server):
         except:
             nameFound = 1
             break
-        
+
     if nameFound == 0:
         # all codes
         for item in stringList:
             retList.append(int(item))
         return retList
-
 
     # at least one name found - get a list of all instruments
     allInst = server.getAllInstruments()
@@ -177,7 +183,7 @@ def getInstrumentList(inst, server):
             pass
         # its a name if it made it here
         # see if its an exact match or a regular expression with *
-        if item.find('*') == -1:
+        if item.find("*") == -1:
             # exact match (case insensitive)
             instFound = 0
             for thisInst in allInst:
@@ -187,63 +193,65 @@ def getInstrumentList(inst, server):
                     break
             # print warning if none found
             if instFound == 0:
-                print('Warning: unable to find instrument ' + str(item))
+                print("Warning: unable to find instrument " + str(item))
         else:
             # use regular expression matching
             instFound = 0
-            reObj = re.compile(item.replace('*', '.*'))
+            reObj = re.compile(item.replace("*", ".*"))
             for thisInst in allInst:
                 m = reObj.search(thisInst.name)
                 if m is not None:
                     retList.append(thisInst.code)
                     instFound = 1
-        
+
             # print warning if none found
             if instFound == 0:
-                print('Warning: unable to find instrument ' + str(item))
+                print("Warning: unable to find instrument " + str(item))
 
     return retList
 
 
 def filterExperimentsUsingSeason(expList, seasonalStartDate, seasonalEndDate):
-    """filterExperimentsUsingSeason returns a subset of the experiments in expList whose date is within the given season.
+    """FilterExperimentsUsingSeason returns a subset of the experiments in expList whose date is within the given season.
 
-    Input:
+    Parameters
+    ----------
+    expList : list of MadrigalExperiment objects
+        a list of MadrigalExperiment objects to be filtered
+    seasonalStartDate : str
+        string in form MM/DD - seasonal start date to filter experiments before
+    seasonalEndDate : str
+        string in form MM/DD - seasonal end date to filter experiments after
 
-        expList - a list of MadrigalExperiment objects to be filtered
-
-        seasonalStartDate - in form MM/DD - seasonal start date to filter experiments before
-
-        seasonalEndDate - in form MM/DD - seasonal end date to filter experiments after
-
-    Returns:
-
+    Returns
+    -------
+    list of MadrigalExperiment objects
         a subset of expList whose times are accepted
     """
     # parse seasonalStartDate and seasonalEndDate
-    dateList = seasonalStartDate.split('/')
+    dateList = seasonalStartDate.split("/")
     if len(dateList) != 2:
-        raise ValueError('seasonalStartDate must be in form MM/DD: ' + str(seasonalStartDate))
+        raise ValueError("seasonalStartDate must be in form MM/DD: " + str(seasonalStartDate))
     try:
         startmonth = int(dateList[0])
         startday = int(dateList[1])
     except:
-        raise ValueError('seasonalStartDate must be in form MM/DD: ' + str(seasonalStartDate))
+        raise ValueError("seasonalStartDate must be in form MM/DD: " + str(seasonalStartDate))
 
     if startmonth < 1 or startmonth > 12 or startday < 1 or startday > 31:
-        raise ValueError('seasonalStartDate must be in form MM/DD: ' + str(seasonalStartDate))
+        raise ValueError("seasonalStartDate must be in form MM/DD: " + str(seasonalStartDate))
 
-    dateList = seasonalEndDate.split('/')
+    dateList = seasonalEndDate.split("/")
     if len(dateList) != 2:
-        raise ValueError('seasonalEndDate must be in form MM/DD: ' + str(seasonalEndDate))
+        raise ValueError("seasonalEndDate must be in form MM/DD: " + str(seasonalEndDate))
     try:
         endmonth = int(dateList[0])
         endday = int(dateList[1])
     except:
-        raise ValueError('seasonalEndDate must be in form MM/DD: ' + str(seasonalEndDate))
+        raise ValueError("seasonalEndDate must be in form MM/DD: " + str(seasonalEndDate))
 
     if endmonth < 1 or endmonth > 12 or endday < 1 or endday > 31:
-        raise ValueError('seasonalEndDate must be in form MM/DD: ' + str(seasonalEndDate))
+        raise ValueError("seasonalEndDate must be in form MM/DD: " + str(seasonalEndDate))
 
     retList = []
 
@@ -264,26 +272,28 @@ def filterExperimentsUsingSeason(expList, seasonalStartDate, seasonalEndDate):
 
 
 def filterExperimentsUsingExpName(expList, expName):
-    """filterExperimentsUsingExpName returns a subset of the experiments in expList whose name matches.
+    """FilterExperimentsUsingExpName returns a subset of the experiments in expList whose name matches.
 
-    Input:
+    Parameters
+    ----------
+    expList : list of MadrigalExperiment objects
+        a list of MadrigalExperiment objects to be filtered
+    expName  : str
+        string to filter experiments by the experiment name.  Can be all or part of the experiment name. Matching
+        is case insensitive.
 
-        expList - a list of MadrigalExperiment objects to be filtered
-
-        expName  - filter experiments by the experiment name.  Can be all or part of the experiment name. Matching
-                     is case insensitive.
-
-    Returns:
-
+    Returns
+    -------
+    list of MadrigalExperiment objects
         a subset of expList whose names are accepted
     """
     retList = []
-    expNameArg = '*%s*' % (expName.replace(' ', '_')) # since we are using fnmatch
+    expNameArg = "*%s*" % (expName.replace(" ", "_"))  # since we are using fnmatch
 
     # now loop through all experiments and add those that pass
     for exp in expList:
         try:
-            thisExpName = exp.name.replace(' ', '_')
+            thisExpName = exp.name.replace(" ", "_")
         except:
             continue
 
@@ -297,26 +307,28 @@ def filterExperimentsUsingExpName(expList, expName):
 
 
 def excludeExperimentsUsingExpName(expList, expName):
-    """excludeExperimentsUsingExpName returns a subset of the experiments in expList whose name does not match.
+    """ExcludeExperimentsUsingExpName returns a subset of the experiments in expList whose name does not match.
 
-    Input:
+    Parameters
+    ----------
+    expList : list of MadrigalExperiment objects
+        a list of MadrigalExperiment objects to be filtered
+    expName  : str
+        string to exclude experiments by the experiment name.  Can be all or part of the experiment name. Matching
+        is case insensitive. None for experiment name always accepted.
 
-        expList - a list of MadrigalExperiment objects to be filtered
-
-        expName  - exclude experiments by the experiment name.  Can be all or part of the experiment name. Matching
-                     is case insensitive. None for experiment name always accepted.
-
-    Returns:
-
+    Returns
+    -------
+    list of MadrigalExperiment objects
         a subset of expList whose names are accepted
     """
     retList = []
-    expNameArg = '*%s*' % (expName.replace(' ', '_')) # since we are using fnmatch
+    expNameArg = "*%s*" % (expName.replace(" ", "_"))  # since we are using fnmatch
 
     # now loop through all experiments and add those that do not match. No experiment name is always accepted
     for exp in expList:
         try:
-            thisExpName = exp.name.replace(' ', '_')
+            thisExpName = exp.name.replace(" ", "_")
         except:
             retList.append(exp)
             continue
@@ -328,28 +340,27 @@ def excludeExperimentsUsingExpName(expList, expName):
     return retList
 
 
-
 def getExperimentFileList(server, expList, verbose):
-    """getExperimentFileList returns a list of MadrigalExperimentFile objects given an experiment list.
+    """GetExperimentFileList returns a list of MadrigalExperimentFile objects given an experiment list.
 
-    Inputs::
+    Parameters
+    ----------
+    server : MadrigalData object
+        the active MadrigalData object to get information from
+    expList : list of MadrigalExperiment objects
+    verbose : bool
+        if True, print verbose output
 
-        server - the active MadrigalData object to get information from
-        
-        expList - the list of desired MadrigalExperiment objects
-        
-        verbose - if True, print verbose output
-
-    Returns:
-
-        a list of MadrigalExperimentFile objects
+    Returns
+    -------
+    list of MadrigalExperimentFile objects
     """
     retList = []
 
     for i, exp in enumerate(expList):
         time.sleep(0.5)
         if verbose:
-            print(('checking experiment %i of %i' % (i,len(expList))))
+            print(("checking experiment %i of %i" % (i, len(expList))))
         try:
             theseExpFiles = server.getExperimentFiles(exp.id)
         except:
@@ -362,20 +373,22 @@ def getExperimentFileList(server, expList, verbose):
 
 
 def filterExperimentFilesUsingKindat(expFileList, kindat):
-    """filterExperimentFilesUsingKindat returns a subset of the experiment files in expFileList whose kindat is found in kindat argument.
+    """FilterExperimentFilesUsingKindat returns a subset of the experiment files in expFileList whose kindat is found in kindat argument.
 
-    Input:
+    Parameters
+    ----------
+    expFileList : list of MadrigalExperimentFile objects
+        a list of MadrigalExperimentFile objects to be filtered
+    kindat : string
+        the kindat argument passed in by the user - comma separated list of kind of data codes.  If names are given, the
+        argument must be enclosed in double quotes.  An asterick will perform matching as in glob.
 
-        expFileList - a list of MadrigalExperimentFile objects to be filtered
-
-        kindat - the kindat argument passed in by the user - comma separated list of kind of data codes.  If names are given, the
-                argument must be enclosed in double quotes.  An asterick will perform matching as in glob.
-
-    Returns:
-
+    Returns
+    -------
+    list of MadrigalExperimentFile objects
         a subset of expFileList whose kindat values are accepted
     """
-    strList = kindat.split(',')
+    strList = kindat.split(",")
 
     # create lists of kindat ints, kindat names, and kindat regular expressions
     kindatCodeList = []
@@ -389,7 +402,7 @@ def filterExperimentFilesUsingKindat(expFileList, kindat):
         except:
             pass
         # a non-integer found
-        testName = '*' + item.lower().replace(' ', '_') + '*'
+        testName = "*" + item.lower().replace(" ", "_") + "*"
         kindatNameList.append(testName)
 
     # now loop through each experiment file, and add it to a new list if its accepted
@@ -404,7 +417,7 @@ def filterExperimentFilesUsingKindat(expFileList, kindat):
             kindatDesc = expFile.kindatdesc.lower()
         except:
             continue
-        kindatDesc = kindatDesc.replace(' ', '_')
+        kindatDesc = kindatDesc.replace(" ", "_")
         for kindatName in kindatNameList:
             if fnmatch.fnmatch(kindatDesc, kindatName):
                 retList.append(expFile)
@@ -413,19 +426,19 @@ def filterExperimentFilesUsingKindat(expFileList, kindat):
     return retList
 
 
-
 def filterExperimentFilesUsingStatus(expFileList):
-    """filterExperimentFilesUsingStatus returns a subset of the experiment files in expFileList with default status.
+    """FilterExperimentFilesUsingStatus returns a subset of the experiment files in expFileList with default status.
 
-    Input:
+    Parameters
+    ----------
+    expFileList : list of MadrigalExperimentFile objects
+        a list of MadrigalExperimentFile objects to be filtered.
 
-        expFileList - a list of MadrigalExperimentFile objects to be filtered.
-
-    Returns:
-
+    Returns
+    -------
+    list of MadrigalExperimentFile objects
         a subset of expFileList with default status
     """
-
     retList = []
     for expFile in expFileList:
         if expFile.category == 1:
@@ -435,48 +448,50 @@ def filterExperimentFilesUsingStatus(expFileList):
 
 
 def filterExperimentFilesUsingFileDesc(expFileList, fileDesc):
-    """filterExperimentFilesUsingFileDesc returns a subset of the experiment files in expFileList with filtered
+    """FilterExperimentFilesUsingFileDesc returns a subset of the experiment files in expFileList with filtered
        using fileDesc string and case-insensitive fnmatch.
 
-    Input:
+    Parameters
+    ----------
+    expFileList : list of MadrigalExperimentFile objects
+        a list of MadrigalExperimentFile objects to be filtered.
 
-        expFileList - a list of MadrigalExperimentFile objects to be filtered.
-
-    Returns:
-
+    Returns
+    -------
+    list of MadrigalExperimentFile objects
         a subset of expFileList with default status
     """
-
     retList = []
-    fileDescArg = '*%s*' % (fileDesc.replace(' ', '_')) # since we are using fnmatch
+    fileDescArg = "*%s*" % (fileDesc.replace(" ", "_"))  # since we are using fnmatch
 
     # now loop through all experiments and add those that pass
     for expFile in expFileList:
         try:
-            thisExpFileDesc = expFile.status.replace(' ', '_')
+            thisExpFileDesc = expFile.status.replace(" ", "_")
         except:
             continue
 
         if not fnmatch.fnmatch(thisExpFileDesc.lower(), fileDescArg.lower()):
             continue
-        
+
         # accept
         retList.append(expFile)
 
     return retList
 
+
 def getTimesOfExperiment(expList, expId):
-    """getTimesOfExperiment returns a list of the start and end time of the experiment given expId.
+    """GetTimesOfExperiment returns a list of the start and end time of the experiment given expId.
 
-    Input:
+    Parameters
+    ----------
+    expList : list of MadrigalExperiment objects
+    expId : int
+        the experiment id
 
-        expList - the list of MadrigalExperiment objects
-
-        expId - the experiment id
-
-    Returns:
-
-        a list of:
+    Returns
+    -------
+    a tuple of ints:
             (startyear,
             startmonth,
             startday,
@@ -490,150 +505,247 @@ def getTimesOfExperiment(expList, expId):
             endmin,
             endsec)
     """
-
     retList = None
     for exp in expList:
         if exp.id == expId:
-            retList = (exp.startyear,
-                       exp.startmonth,
-                       exp.startday,
-                       exp.starthour,
-                       exp.startmin,
-                       exp.startsec,
-                       exp.endyear,
-                       exp.endmonth,
-                       exp.endday,
-                       exp.endhour,
-                       exp.endmin,
-                       exp.endsec)
+            retList = (
+                exp.startyear,
+                exp.startmonth,
+                exp.startday,
+                exp.starthour,
+                exp.startmin,
+                exp.startsec,
+                exp.endyear,
+                exp.endmonth,
+                exp.endday,
+                exp.endhour,
+                exp.endmin,
+                exp.endsec,
+            )
 
     return retList
 
 
 def getTimeParms(expTimeList, numIter, j):
-    """getTimeParms creates arguments to be passed to isprint to get only a slice of an experiment's data
+    """GetTimeParms creates arguments to be passed to isprint to get only a slice of an experiment's data.
 
-        Input:
 
-            expTimeList: a list of experiment start and end times:startyear, startmonth, startday, starthour,
-                startmin, startsec, endyear, endmonth, endday, endhour, endmin, endsec
+    Parameters
+    ----------
+    expTimeList : list of int
+        a list of experiment start and end times:startyear, startmonth, startday, starthour,
+        startmin, startsec, endyear, endmonth, endday, endhour, endmin, endsec
+    numIter : int
+        the number of pieces to break the experiment into
+    j : int
+        this iteration
 
-            numIter - the number of pieces to break the experiment into
-
-            j - this iteration
-
-        Returns - a string in the form ' date1=01/20/1998 time1=09:00:00 date2=01/20/1998 time2=10:30:00 ' that
+    Returns
+    -------
+    str
+        a string in the form ' date1=01/20/1998 time1=09:00:00 date2=01/20/1998 time2=10:30:00 ' that
         will cause isprint to only examine a slice of the data.
     """
-    expStartTime = time.mktime((expTimeList[0],
-                                expTimeList[1],
-                                expTimeList[2],
-                                expTimeList[3],
-                                expTimeList[4],
-                                expTimeList[5],0,0,-1))
-    expEndTime = time.mktime((expTimeList[6],
-                             expTimeList[7],
-                             expTimeList[8],
-                             expTimeList[9],
-                             expTimeList[10],
-                             expTimeList[11],0,0,-1))
+    expStartTime = time.mktime(
+        (
+            expTimeList[0],
+            expTimeList[1],
+            expTimeList[2],
+            expTimeList[3],
+            expTimeList[4],
+            expTimeList[5],
+            0,
+            0,
+            -1,
+        )
+    )
+    expEndTime = time.mktime(
+        (
+            expTimeList[6],
+            expTimeList[7],
+            expTimeList[8],
+            expTimeList[9],
+            expTimeList[10],
+            expTimeList[11],
+            0,
+            0,
+            -1,
+        )
+    )
     totalExpTime = expEndTime - expStartTime
-    begSliceTime = int(((j/float(numIter)) * totalExpTime) + expStartTime)
-    endSliceTime = int((((j+1)/float(numIter)) * totalExpTime) + expStartTime)
+    begSliceTime = int(((j / float(numIter)) * totalExpTime) + expStartTime)
+    endSliceTime = int((((j + 1) / float(numIter)) * totalExpTime) + expStartTime)
 
     begTimeList = time.localtime(begSliceTime)
     endTimeList = time.localtime(endSliceTime)
 
-    
-    return ' date1=%i/%i/%i time1=%02i:%02i:%02i date2=%i/%i/%i time2=%02i:%02i:%02i ' % (begTimeList[1],
-                                                                                          begTimeList[2],
-                                                                                          begTimeList[0],
-                                                                                          begTimeList[3],
-                                                                                          begTimeList[4],
-                                                                                          begTimeList[5],
-                                                                                          endTimeList[1],
-                                                                                          endTimeList[2],
-                                                                                          endTimeList[0],
-                                                                                          endTimeList[3],
-                                                                                          endTimeList[4],
-                                                                                          endTimeList[5])
-                                                                                          
+    return " date1=%i/%i/%i time1=%02i:%02i:%02i date2=%i/%i/%i time2=%02i:%02i:%02i " % (
+        begTimeList[1],
+        begTimeList[2],
+        begTimeList[0],
+        begTimeList[3],
+        begTimeList[4],
+        begTimeList[5],
+        endTimeList[1],
+        endTimeList[2],
+        endTimeList[0],
+        endTimeList[3],
+        endTimeList[4],
+        endTimeList[5],
+    )
+
 
 def getOutputFileArg(fullFilename, format, output):
-    """getOutputFileArg returns the full path to save this fullFilename to, or None
+    """GetOutputFileArg returns the full path to save this fullFilename to, or None
     if not saving data to individual files.
-    
-    Inputs:
-        fullFilename - full filename of the file being downloaded on the Madrigal server
-        format - Hdf5, netCDF4, or ascii
-        output - directory being saved to if format is not None
+
+    Parameters
+    ----------
+    fullFilename : str
+        full filename of the file being downloaded on the Madrigal server
+    format : str
+        Hdf5, netCDF4, or ascii
+    output : str
+        directory being saved to if format is not None
+
+    Returns
+    -------
+    str
+
+        full path to save fullFilename to
     """
     if format is None:
         # not saving to individual files
-        return(None)
+        return None
     filename, file_extension = os.path.splitext(fullFilename)
     basename = os.path.basename(filename)
-    if format == 'Hdf5':
-        ext = '.hdf5'
-    elif format == 'netCDF4':
-        ext = '.nc'
+    if format == "Hdf5":
+        ext = ".hdf5"
+    elif format == "netCDF4":
+        ext = ".nc"
     else:
-        ext = '.txt'
-    return(os.path.join(output, basename + ext))
+        ext = ".txt"
+    return os.path.join(output, basename + ext)
 
 
 # parse command line
 parser = argparse.ArgumentParser(
-        description='Run a global search through Madrigal data from a given URL matching given parameters and downloads data.',
-        usage=usage,
-        formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    
+    description="Run a global search through Madrigal data from a given URL matching given parameters and downloads data.",
+    usage=usage,
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+)
+
 # Required arguments
-parser.add_argument('--url', type=str, required=True, help="URL of the main page of a Madrigal site.")
-parser.add_argument('--parms', type=str, required=True, help='Comma-separated list of Madrigal mnemonics')
-parser.add_argument('--output', type=str, required=True, help='Writable file or directory path')
-parser.add_argument('--user_fullname', required=True, help='Full user name (quoted if contains spaces)')
-parser.add_argument('--user_email', required=True, help='User email address')
-parser.add_argument('--user_affiliation', required=True, help='User affiliation (quoted if contains spaces)')
+parser.add_argument(
+    "--url", type=str, required=True, help="URL of the main page of a Madrigal site."
+)
+parser.add_argument(
+    "--parms", type=str, required=True, help="Comma-separated list of Madrigal mnemonics"
+)
+parser.add_argument("--output", type=str, required=True, help="Writable file or directory path")
+parser.add_argument(
+    "--user_fullname", required=True, help="Full user name (quoted if contains spaces)"
+)
+parser.add_argument("--user_email", required=True, help="User email address")
+parser.add_argument(
+    "--user_affiliation", required=True, help="User affiliation (quoted if contains spaces)"
+)
 
 # Optional arguments
-parser.add_argument('--startDate', required=True, help='Start date in YYYY-MM-DD format to filter experiments before.  Defaults to allow all experiments.')
-parser.add_argument('--endDate', required=True, help='End date in YYYY-MM-DD format to filter experiments after.  Defaults to allow all experiments.')
-parser.add_argument('--inst', default='0', help='Comma separated list of instrument codes or names. See Madrigal documentation \
+parser.add_argument(
+    "--startDate",
+    required=True,
+    help="Start date in YYYY-MM-DD format to filter experiments before.  Defaults to allow all experiments.",
+)
+parser.add_argument(
+    "--endDate",
+    required=True,
+    help="End date in YYYY-MM-DD format to filter experiments after.  Defaults to allow all experiments.",
+)
+parser.add_argument(
+    "--inst",
+    default="0",
+    help="Comma separated list of instrument codes or names. See Madrigal documentation \
                                    for this list.  Defaults to allow all instruments. If names are given, the \
                                    argument must be enclosed in double quotes.  An asterisk will perform matching as \
-                                   in glob.')
-parser.add_argument('--format', type=str, default=None, choices=['Hdf5', 'netCDF4', 'ascii'], help='Output data format (ascii, hdf5, netCDF4).')
-parser.add_argument('--kindat', default='0', help='Comma separated list of kind of data codes. See Madrigal documentation \
+                                   in glob.",
+)
+parser.add_argument(
+    "--format",
+    type=str,
+    default=None,
+    choices=["Hdf5", "netCDF4", "ascii"],
+    help="Output data format (ascii, hdf5, netCDF4).",
+)
+parser.add_argument(
+    "--kindat",
+    default="0",
+    help="Comma separated list of kind of data codes. See Madrigal documentation \
                                        for this list.  Defaults to allow all kinds of data.  If names are given, the \
                                        argument must be enclosed in double quotes.  An asterisk will perform matching as \
-                                       in glob.')
-parser.add_argument('--filter', type=str, help='<[mnemonic] or [mnemonic1,[+-*/]mnemonic2]>,<lower limit1>,<upper limit1>[or<lower limit2>,<upper limit2>...] \
+                                       in glob.",
+)
+parser.add_argument(
+    "--filter",
+    type=str,
+    help="<[mnemonic] or [mnemonic1,[+-*/]mnemonic2]>,<lower limit1>,<upper limit1>[or<lower limit2>,<upper limit2>...] \
    a filter using any measured or derived Madrigal parameter, or two Madrigal parameters either added, \
    subtracted, multiplied or divided.  Each filter has one or more allowed ranges.  The filter accepts \
    data that is in any allowed range.  If the Madrigal parameter value is missing, the filter will always \
    reject that data.  Multiple filter arguments are allowed on the command line.  To skip either a lower \
-   limit or an upper limit, leave it blank.')
-parser.add_argument('--seasonalStartDate', type=str, default='01/01', help='Seasonal start date in MM/DD format to filter experiments before.  Use this to select only part of the \
-                                year to collect data.  Defaults to Jan 1.')
-parser.add_argument('--seasonalEndDate', type=str, default='12/31', help='Seasonal end date in MM/DD format to filter experiments after.  Use this to select only part of the \
-                                    year to collect data.  Defaults to Dec 31.')
-parser.add_argument('--showFiles', action='store_true', help='If given, show file names.  Default is to not show file names. Not used if format in <Hdf5, netCDF4>')
-parser.add_argument('--showSummary', action='store_true', help='if given, summarize all arguments at the beginning.  Not used if format in <Hdf5, netCDF4>. \
-   Default is to not show summary.')
-parser.add_argument('--hideParms', action='store_true', help='Hide parameters flag')
-parser.add_argument('--includeNonDefault', action='store_true', help='Include realtime files when no default')
-parser.add_argument('--missing', type=str, default='missing', help='Missing value label')
-parser.add_argument('--assumed', type=str, default='assumed', help='Assumed value label')
-parser.add_argument('--knownbad', type=str, default='knownbad', help='Known bad value label')
-parser.add_argument('--verbose', action='store_true', help='Flag to enable verbose output.')
-parser.add_argument('--expName', type=str, help='Filter experiments by experiment name. Give all or part of the experiment name. Matching \
-                     is case insensitive and fnmatch characters * and ? are allowed.')
-parser.add_argument('--excludeExpName', type=str, help='Exclude experiments by experiment name. Give all or part of the experiment name. Matching \
-                     is case insensitive and fnmatch characters * and ? are allowed.')
-parser.add_argument('--fileDesc', type=str, help='Filter files by file description string. Give all or part of the file description string. Matching \
-                     is case insensitive and fnmatch characters * and ? are allowed.')
+   limit or an upper limit, leave it blank.",
+)
+parser.add_argument(
+    "--seasonalStartDate",
+    type=str,
+    default="01/01",
+    help="Seasonal start date in MM/DD format to filter experiments before.  Use this to select only part of the \
+                                year to collect data.  Defaults to Jan 1.",
+)
+parser.add_argument(
+    "--seasonalEndDate",
+    type=str,
+    default="12/31",
+    help="Seasonal end date in MM/DD format to filter experiments after.  Use this to select only part of the \
+                                    year to collect data.  Defaults to Dec 31.",
+)
+parser.add_argument(
+    "--showFiles",
+    action="store_true",
+    help="If given, show file names.  Default is to not show file names. Not used if format in <Hdf5, netCDF4>",
+)
+parser.add_argument(
+    "--showSummary",
+    action="store_true",
+    help="if given, summarize all arguments at the beginning.  Not used if format in <Hdf5, netCDF4>. \
+   Default is to not show summary.",
+)
+parser.add_argument("--hideParms", action="store_true", help="Hide parameters flag")
+parser.add_argument(
+    "--includeNonDefault", action="store_true", help="Include realtime files when no default"
+)
+parser.add_argument("--missing", type=str, default="missing", help="Missing value label")
+parser.add_argument("--assumed", type=str, default="assumed", help="Assumed value label")
+parser.add_argument("--knownbad", type=str, default="knownbad", help="Known bad value label")
+parser.add_argument("--verbose", action="store_true", help="Flag to enable verbose output.")
+parser.add_argument(
+    "--expName",
+    type=str,
+    help="Filter experiments by experiment name. Give all or part of the experiment name. Matching \
+                     is case insensitive and fnmatch characters * and ? are allowed.",
+)
+parser.add_argument(
+    "--excludeExpName",
+    type=str,
+    help="Exclude experiments by experiment name. Give all or part of the experiment name. Matching \
+                     is case insensitive and fnmatch characters * and ? are allowed.",
+)
+parser.add_argument(
+    "--fileDesc",
+    type=str,
+    help="Filter files by file description string. Give all or part of the file description string. Matching \
+                     is case insensitive and fnmatch characters * and ? are allowed.",
+)
 args = parser.parse_args()
 
 # Set default values for variables
@@ -669,59 +781,68 @@ if startDate is None:
     startmonth = 1
     startday = 1
 else:
-    dateList = startDate.split('/')
+    dateList = startDate.split("/")
     if len(dateList) != 3:
-        print('--startDate must be in the form MM/DD/YYYY: ' + str(startDate))
+        print("--startDate must be in the form MM/DD/YYYY: " + str(startDate))
         sys.exit(-1)
     startmonth = int(dateList[0])
     startday = int(dateList[1])
     startyear = int(dateList[2])
     if startmonth < 1 or startmonth > 12 or startday < 1 or startday > 31:
-        print('--startDate must be in the form MM/DD/YYYY: ' + str(startDate))
+        print("--startDate must be in the form MM/DD/YYYY: " + str(startDate))
         sys.exit(-1)
     try:
         datetime.datetime(startyear, startmonth, startday)
     except:
-        print('Invalid startDate <%s>' % (str(startDate)))
+        print("Invalid startDate <%s>" % (str(startDate)))
         sys.exit(-1)
 
 # set endDate
 if endDate is None:
     # chose one year from today
-    nextYear = time.time() + 365*24*60*60
+    nextYear = time.time() + 365 * 24 * 60 * 60
     nextYear = time.gmtime(nextYear)
     endyear = nextYear[0]
     endmonth = nextYear[1]
     endday = nextYear[2]
 else:
-    dateList = endDate.split('/')
+    dateList = endDate.split("/")
     if len(dateList) != 3:
-        print('--endDate must be in the form MM/DD/YYYY: ' + str(endDate))
+        print("--endDate must be in the form MM/DD/YYYY: " + str(endDate))
         sys.exit(-1)
     endmonth = int(dateList[0])
     endday = int(dateList[1])
     endyear = int(dateList[2])
     if endmonth < 1 or endmonth > 12 or endday < 1 or endday > 31:
-        print('--endDate must be in the form MM/DD/YYYY: ' + str(endDate))
+        print("--endDate must be in the form MM/DD/YYYY: " + str(endDate))
         sys.exit(-1)
     try:
         datetime.datetime(endyear, endmonth, endday)
     except:
-        print('Invalid endDate <%s>' % (str(endDate)))
+        print("Invalid endDate <%s>" % (str(endDate)))
         sys.exit(-1)
 
 # output must be a writeable directory
 if not os.path.isdir(output) and not format is None:
     print(usage)
-    print(('If format set, output <%s> must be a writable directory.  To write to a single ascii file, do not specify format.' % (output)))
+    print(
+        (
+            "If format set, output <%s> must be a writable directory.  To write to a single ascii file, do not specify format."
+            % (output)
+        )
+    )
     sys.exit(-1)
 if not os.access(output, os.W_OK) and not format is None:
     print(usage)
-    print(('If format set, output <%s> must be a writable directory.  To write to a single ascii file, do not specify format.' % (output)))
+    print(
+        (
+            "If format set, output <%s> must be a writable directory.  To write to a single ascii file, do not specify format."
+            % (output)
+        )
+    )
 
-timeList = (startyear, startmonth, startday, 0, 0, 0,
-            endyear, endmonth, endday, 23, 59, 59)
-    
+timeList = (startyear, startmonth, startday, 0, 0, 0, endyear, endmonth, endday, 23, 59, 59)
+
 
 # verify the url is valid
 server = madrigalWeb.madrigalWeb.MadrigalData(url)
@@ -730,30 +851,20 @@ server = madrigalWeb.madrigalWeb.MadrigalData(url)
 instList = getInstrumentList(inst, server)
 
 # get the list of all experiments for the given instruments and time range
-expList = server.getExperiments(instList,
-                                startyear,
-                                startmonth,
-                                startday,
-                                0,
-                                0,
-                                0,
-                                endyear,
-                                endmonth,
-                                endday,
-                                23,
-                                59,
-                                59)
+expList = server.getExperiments(
+    instList, startyear, startmonth, startday, 0, 0, 0, endyear, endmonth, endday, 23, 59, 59
+)
 
 expList.sort()
 
 # filter experiments using seasonal filter if needed
-if seasonalStartDate != '01/01' or seasonalEndDate != '12/31':
+if seasonalStartDate != "01/01" or seasonalEndDate != "12/31":
     expList = filterExperimentsUsingSeason(expList, seasonalStartDate, seasonalEndDate)
 
 # filter experiments using expName if needed
 if expName is not None:
     expList = filterExperimentsUsingExpName(expList, expName)
-    
+
 # exclude experiments using expName if needed
 if excludeExpName is not None:
     expList = excludeExperimentsUsingExpName(expList, excludeExpName)
@@ -763,38 +874,38 @@ expFileList = getExperimentFileList(server, expList, verbose)
 
 
 # filter expFileList using kindat filter if needed
-if kindat != '0':
+if kindat != "0":
     expFileList = filterExperimentFilesUsingKindat(expFileList, kindat)
 
 # filter using file status if needed
 if includeNonDefault == 0:
     expFileList = filterExperimentFilesUsingStatus(expFileList)
-    
+
 # filter expFileList using fileDesc filter if needed
 if fileDesc is not None:
     expFileList = filterExperimentFilesUsingFileDesc(expFileList, fileDesc)
 
 # print error if no files selected
 if len(expFileList) == 0:
-    print('No files selected with these arguments')
+    print("No files selected with these arguments")
     sys.exit(-1)
 
 # open output file if needed
 if format is None:
-    outputFile = open(output, 'w')
+    outputFile = open(output, "w")
 
 # print summary if desired:
 if showSummary and (format is None):
-    summary = 'global isprint run %s with the following arguments:\n' % (time.asctime())
+    summary = "global isprint run %s with the following arguments:\n" % (time.asctime())
     for arg in sys.argv[1:]:
-        summary += '%s\n' % (str(arg))
+        summary += "%s\n" % (str(arg))
     outputFile.write(summary)
 
 # print header if needed
 if format is None and not hideParms:
-    delimiter = '  '
-    header = delimiter.join(parms.split(','))
-    outputFile.write(header + '\n')
+    delimiter = "  "
+    header = delimiter.join(parms.split(","))
+    outputFile.write(header + "\n")
 
 # print message if verbose
 numFiles = len(expFileList)
@@ -802,86 +913,89 @@ if verbose:
     print("%i files being analyzed" % (numFiles))
 
 # isprint to output file from each expFileList
-delimiter = ' '
+delimiter = " "
 filterStr = delimiter.join(filterList)
-# handle the case when an experiment extends beyond the date boundaries, and so 
+# handle the case when an experiment extends beyond the date boundaries, and so
 # filtering must be done at the isprint level
-if filterStr.find('date1') == -1:
+if filterStr.find("date1") == -1:
     newFilterStr = filterStr + getTimeParms(timeList, 1, 0)
 for i in range(numFiles):
     if verbose:
-        print('Analyzing file %i of %i: %s' % (i+1, numFiles, expFileList[i].name))
+        print("Analyzing file %i of %i: %s" % (i + 1, numFiles, expFileList[i].name))
     if showFiles and (format is None):
-        outputFile.write('%s\n' % (expFileList[i].name))
+        outputFile.write("%s\n" % (expFileList[i].name))
     outputFileArg = getOutputFileArg(expFileList[i].name, format, output)
     time.sleep(0.5)
     try:
-        data = server.isprint(expFileList[i].name,
-                              parms,
-                              newFilterStr,
-                              user_fullname,
-                              user_email,
-                              user_affiliation,
-                              outputFileArg,
-                              verbose=verbose)
+        data = server.isprint(
+            expFileList[i].name,
+            parms,
+            newFilterStr,
+            user_fullname,
+            user_email,
+            user_affiliation,
+            outputFileArg,
+            verbose=verbose,
+        )
         if format is None:
             # modify any special value
-            if missing != 'missing':
-                data = data.replace('missing', missing)
-            if assumed != 'assumed':
-                data = data.replace('assumed', assumed)
-            if missing != 'knownbad':
-                data = data.replace('knownbad', knownbad)
-    
+            if missing != "missing":
+                data = data.replace("missing", missing)
+            if assumed != "assumed":
+                data = data.replace("assumed", assumed)
+            if missing != "knownbad":
+                data = data.replace("knownbad", knownbad)
+
             # skip error message if No records selected
             if showFiles == 0:
-                if data.find('No records') != -1:
+                if data.find("No records") != -1:
                     continue
-            if data[0] == ' ':
-                outputFile.write(data[1:]) # skip leading space
+            if data[0] == " ":
+                outputFile.write(data[1:])  # skip leading space
             else:
                 outputFile.write(data)
-        
+
     except:
         if format is None:
-        # assume isprint timed out - try again by breaking the experiment into pieces
+            # assume isprint timed out - try again by breaking the experiment into pieces
             expTimeList = getTimesOfExperiment(expList, expFileList[i].expId)
-            numIter = 50 # number of pieces to break exp into
+            numIter = 50  # number of pieces to break exp into
             for j in range(numIter):
                 newParms = getTimeParms(expTimeList, numIter, j)
                 time.sleep(0.5)
                 try:
-                    data = server.isprint(expFileList[i].name,
-                                  parms,
-                                  filterStr + newParms,
-                                  user_fullname,
-                                  user_email,
-                                  user_affiliation) 
-    
+                    data = server.isprint(
+                        expFileList[i].name,
+                        parms,
+                        filterStr + newParms,
+                        user_fullname,
+                        user_email,
+                        user_affiliation,
+                    )
+
                     # modify any special value
-                    if missing != 'missing':
-                        data = data.replace('missing', missing)
-                    if assumed != 'assumed':
-                        data = data.replace('assumed', assumed)
-                    if missing != 'knownbad':
-                        data = data.replace('knownbad', knownbad)
-    
+                    if missing != "missing":
+                        data = data.replace("missing", missing)
+                    if assumed != "assumed":
+                        data = data.replace("assumed", assumed)
+                    if missing != "knownbad":
+                        data = data.replace("knownbad", knownbad)
+
                     # skip error message if No records selected
                     if showFiles == 0:
-                        if data.find('No records') != -1:
+                        if data.find("No records") != -1:
                             continue
-                    
-                    outputFile.write(data[1:]) # skip leading space
+
+                    outputFile.write(data[1:])  # skip leading space
                 except:
                     if verbose:
-                        print('Failure analyzing file %s with slice %s' % (expFileList[i].name, newParms))
+                        print(
+                            "Failure analyzing file %s with slice %s"
+                            % (expFileList[i].name, newParms)
+                        )
                     continue
         else:
             raise
 
 if format is None:
     outputFile.close()
-
-
-
-

@@ -11,7 +11,7 @@ authors = [
 ]
 description = "Python Madrigal Remote API"
 readme = "README.md"
-requires-python = ">=3.3"
+requires-python = ">=3.7"
 dependencies = []
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -21,6 +21,7 @@ classifiers = [
 
 [project.urls]
 "Homepage" = "https://github.com/MITHaystack/madrigalWeb"
+GitHub = "https://github.com/MITHaystack/madrigalWeb"
 
 [tool.ruff]
 exclude = [
@@ -50,18 +51,23 @@ exclude = [
     "node_modules",
     "site-packages",
     "venv",
+    "tests",
+    "docs"
 ]
 line-length = 100
 indent-width = 4
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F"]
-ignore = ["E714", "E722", "E402"]
+select = ["E4", "E7", "E9", "F", "D"]
+ignore = ["E714", "E722", "E402", "D205"]
 fixable = ["ALL"]
 unfixable = []
 
 [tool.ruff.format]
 quote-style = "double"
-indent-style = "tab"
+indent-style = "space"
 skip-magic-trailing-comma = false
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"

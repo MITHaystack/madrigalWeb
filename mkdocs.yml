@@ -1,0 +1,28 @@
+site_name: MadrigalWeb Docs
+theme:
+  name: readthedocs
+  highlightjs: true
+  hljs_languages:
+    - yaml
+    - python
+    - javascript
+
+plugins:
+  - search
+  - include-markdown
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: numpy
+          paths: [.]  # Points to the directory containing your source code
+
+markdown_extensions:
+  - attr_list
+
+nav:
+  - Home: index.md
+  - MadrigalWeb API Reference: api.md
+  - globalDownload.py: gd.md
+  - globalIsprint.py: gi.md
+  - globalCitation.py: gc.md

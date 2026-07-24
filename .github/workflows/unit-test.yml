@@ -1,0 +1,29 @@
+# This workflow runs the madrigalWeb unit tests.
+
+name: unit-test
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+
+  unit-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+      - name: Test MadrigalWeb unit tests
+        run: |
+          python madrigalWeb/tests/testMadrigalWeb.py
+          python madrigalWeb/tests/testGlobalScriptsCLI.py

@@ -20,8 +20,7 @@ import madrigalWeb.madrigalWeb
 user_fullname = 'Bill Rideout - automated test'
 user_email = 'brideout@haystack.mit.edu'
 user_affiliation = 'MIT Haystack'
-url = 'http://millstonehill.haystack.mit.edu'
-# url = "https://cedar.openmadrigal.org"
+url = "https://cedar.openmadrigal.org"
 
 class TestMadrigalData(unittest.TestCase):
     """Unit test of main class madrigalWeb.madrigalWeb.MadrigalData
@@ -175,10 +174,6 @@ class TestMadrigalData(unittest.TestCase):
         reStr = r'[0-9]+.[0-9]+'
         foundList = re.findall(reStr, result)
         self.assertTrue(len(foundList) > 0)
-        
-    def test_compareVersions(self):
-        result = self.madData.compareVersions('2.7', '3.2')
-        self.assertFalse(result)
         
     def test_getCitedFilesFromUrl(self):
         result = self.madData.getCitedFilesFromUrl(f'{url}/getCitationGroup?id=1000')

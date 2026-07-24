@@ -1,15 +1,14 @@
-"""Python remote API for access to any Madrigal server
-
+"""Python remote API for access to any Madrigal server.
 
     Example::
 
-        import madrigalWeb.madrigalWeb
+import madrigalWeb.madrigalWeb
 
-        testData = madrigalWeb.madrigalWeb.MadrigalData('http://madrigal.haystack.mit.edu')
+testData = madrigalWeb.madrigalWeb.MadrigalData('http://madrigal.haystack.mit.edu')
 
-        instList = testData.getAllInstruments()
+instList = testData.getAllInstruments()
 
-        for inst in instList:
+for inst in instList:
 
-            print inst
+print inst
 """
