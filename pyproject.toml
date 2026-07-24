@@ -22,6 +22,7 @@ classifiers = [
 [project.urls]
 "Homepage" = "https://github.com/MITHaystack/madrigalWeb"
 GitHub = "https://github.com/MITHaystack/madrigalWeb"
+Documentation = "https://madrigalweb.readthedocs.io/en/latest/"
 
 [tool.ruff]
 exclude = [

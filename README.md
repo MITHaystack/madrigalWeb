@@ -1,6 +1,6 @@
 # MadrigalWeb - a python API to access the Madrigal database
 
-MadrigalWeb is a pure python module to access data from any Madrigal database.  For documentation and examples go to any Madrigal site such as 
+MadrigalWeb is a pure python module to access data from any Madrigal database.  See documentation [here](https://madrigalweb.readthedocs.io/en/latest/). For more data examples go to any Madrigal site such as 
 <https://cedar.openmadrigal.org>
 
 The easiest way to use the Madrigal python remote data access API is to simply let the [web interface](https://cedar.openmadrigal.org/chooseScript) generate the command you need. 
