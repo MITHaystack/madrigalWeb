@@ -145,7 +145,10 @@ class MadrigalData:
             if len(items) < 4:
                 continue
             site = int(items[0])
-            thisUrl = "http://%s/%s" % (items[2], items[3])
+            if items[2].find("http") == -1:
+                thisUrl = "http://%s/%s" % (items[2], items[3])
+            else:
+                thisUrl = "%s/%s" % (items[2], items[3])
             siteDict[site] = thisUrl
 
         return siteDict
